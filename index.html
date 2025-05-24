@@ -241,41 +241,301 @@
                 margin-left: 0;
             }
         }
+
+        /* Section styles */
+        .section {
+            display: none;
+            padding: 20px;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        /* Dashboard styles */
+        .overview-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        /* Submittals styles */
+        .submittals-content {
+            margin-top: 20px;
+        }
+
+        /* Procurement styles */
+        .procurement-content {
+            margin-top: 20px;
+        }
+
+        .procurement-form {
+            margin-bottom: 40px;
+        }
+
+        /* Projects styles */
+        .projects-content {
+            margin-top: 20px;
+        }
+
+        .project-form {
+            max-width: 600px;
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .form-group textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        /* Button styles */
+        .button-group {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .add-row-btn,
+        .submit-all-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .add-row-btn {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .submit-all-btn {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .add-row-btn:hover,
+        .submit-all-btn:hover {
+            opacity: 0.9;
+        }
     </style>
 </head>
 
 <body>
     <div class="sidebar">
         <h2>BuildQuip Menu</h2>
-        <ul id="sidebarNav">
-            <li><a href="#" data-view="projects">Projects</a></li>
-            <li><a href="#" data-view="allproducts">All Products</a></li>
+        <ul class="sidebar-nav">
+            <li><a href="#" data-section="dashboard">Dashboard</a></li>
+            <li><a href="#" data-section="submittals">Submittals</a></li>
+            <li><a href="#" data-section="procurement" class="active">Procurement</a></li>
+            <li><a href="#" data-section="projects">Projects</a></li>
         </ul>
     </div>
 
     <div class="main-content">
-        <div class="container">
-            <h1>Contrack - Procurement Tracker (Prototype v1)</h1>
+        <div class="dashboard-section section">
+            <h1>Dashboard</h1>
+            <div class="overview-stats">
+                <!-- Dashboard content will go here -->
+            </div>
+        </div>
 
-            <div class="project-management-area"
-                style="margin-bottom: 40px; padding: 20px; border: 1px solid #007bff; border-radius: 8px;">
-                <h2>Project Management</h2>
-
-                <form id="projectForm" class="project-form">
-                    <h3>Create New Project</h3>
-                    <div class="form-group">
-                        <label for="projectNameInput">Project Name:</label>
-                        <input type="text" id="projectNameInput" name="projectNameInput" required>
+        <div class="submittals-section section">
+            <h1>Submittals</h1>
+            <div class="submittals-content">
+                <form id="submittalsForm">
+                    <table class="excel-form">
+                        <thead>
+                            <tr>
+                                <th>Specifications</th>
+                                <th>Title/Product</th>
+                                <th>Material ID</th>
+                                <th>Vendor/Partner</th>
+                                <th>Submittal Manager</th>
+                                <th>Submittal Status</th>
+                                <th>Date Received from Sub</th>
+                                <th>Date Sent to Design Team</th>
+                                <th>Due Date</th>
+                                <th>Date Review Received</th>
+                                <th>Date Issued to Sub</th>
+                                <th>Comments</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="submittalsFormBody">
+                            <!-- Initial empty row -->
+                            <tr class="form-row">
+                                <td><input type="text" class="specifications" maxlength="8" pattern="\d{1,8}" required
+                                        oninput="validateSpecifications(this)" placeholder="Enter 8 digits"></td>
+                                <td><input type="text" class="title-product" required></td>
+                                <td><input type="text" class="material-id"></td>
+                                <td><input type="text" class="vendor-partner"></td>
+                                <td><input type="text" class="submittal-manager" required></td>
+                                <td>
+                                    <select class="submittal-status" required>
+                                        <option value="">Select Status</option>
+                                        <option value="EAN">EAN</option>
+                                        <option value="NEN">NEN</option>
+                                        <option value="R&R">R&R</option>
+                                        <option value="Closeout">Closeout</option>
+                                        <option value="For Record">For Record</option>
+                                        <option value="Pending">Pending</option>
+                                    </select>
+                                </td>
+                                <td><input type="date" class="date-received" required></td>
+                                <td><input type="date" class="date-sent-design"></td>
+                                <td><input type="date" class="due-date" required></td>
+                                <td><input type="date" class="date-review-received"></td>
+                                <td><input type="date" class="date-issued-sub"></td>
+                                <td><input type="text" class="comments"></td>
+                                <td>
+                                    <button type="button" class="remove-row-btn"
+                                        onclick="removeSubmittalRow(this)">Remove</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="button-group">
+                        <button type="button" class="add-row-btn" onclick="addNewSubmittalRow()">Add Row</button>
+                        <button type="button" class="submit-all-btn" onclick="submitAllSubmittals()">Submit All</button>
                     </div>
-                    <div class="form-group">
-                        <label for="projectDescriptionInput">Project Description (Optional):</label>
-                        <textarea id="projectDescriptionInput" name="projectDescriptionInput"></textarea>
-                    </div>
-                    <button type="submit">Create Project</button>
                 </form>
+                <div class="submittals-table">
+                    <h2>Submittals Log</h2>
+                    <table class="excel-form">
+                        <thead>
+                            <tr>
+                                <th>Specifications</th>
+                                <th>Title/Product</th>
+                                <th>Material ID</th>
+                                <th>Vendor/Partner</th>
+                                <th>Submittal Manager</th>
+                                <th>Submittal Status</th>
+                                <th>Date Received from Sub</th>
+                                <th>Date Sent to Design Team</th>
+                                <th>Due Date</th>
+                                <th>Date Review Received</th>
+                                <th>Date Issued to Sub</th>
+                                <th>Comments</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="submittalsTableBody">
+                            <!-- Table rows will be added here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
-                <div id="projectList">
-                    <h3>Current Projects:</h3>
+        <div class="procurement-section section active">
+            <h1>Procurement</h1>
+            <div class="procurement-content">
+                <form id="procurementForm">
+                    <table class="excel-form">
+                        <thead>
+                            <tr>
+                                <th>Specifications</th>
+                                <th>Title/Product</th>
+                                <th>Material ID</th>
+                                <th>Vendor/Partner</th>
+                                <th>Required On-site Date</th>
+                                <th>Lead Time (weeks)</th>
+                                <th>Drop Dead Date</th>
+                                <th>Order Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="procurementFormBody">
+                            <!-- Initial empty row -->
+                            <tr class="form-row">
+                                <td><input type="text" class="specifications" maxlength="8" pattern="\d{1,8}" required
+                                        oninput="validateSpecifications(this)" placeholder="Enter 8 digits"></td>
+                                <td><input type="text" class="title-product" required></td>
+                                <td><input type="text" class="material-id"></td>
+                                <td><input type="text" class="vendor-partner"></td>
+                                <td><input type="date" class="required-onsite-date" required
+                                        onchange="calculateDropDeadDate(this)"></td>
+                                <td><input type="number" class="lead-time" min="0" step="1" required
+                                        onchange="calculateDropDeadDate(this)"></td>
+                                <td><input type="date" class="drop-dead-date" readonly></td>
+                                <td><input type="date" class="order-date" required onchange="updateStatus(this)"></td>
+                                <td><input type="text" class="status" readonly></td>
+                                <td>
+                                    <button type="button" class="remove-row-btn"
+                                        onclick="removeRow(this)">Remove</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="button-group">
+                        <button type="button" class="add-row-btn" onclick="addNewRow()">Add Row</button>
+                        <button type="button" class="submit-all-btn" onclick="submitAllItems()">Submit All</button>
+                    </div>
+                </form>
+                <div class="procurement-table">
+                    <h2>Procurement Log</h2>
+                    <table class="excel-form">
+                        <thead>
+                            <tr>
+                                <th>Specifications</th>
+                                <th>Title/Product</th>
+                                <th>Material ID</th>
+                                <th>Vendor/Partner</th>
+                                <th>Required On-site Date</th>
+                                <th>Lead Time</th>
+                                <th>Drop Dead Date</th>
+                                <th>Order Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="procurementTableBody">
+                            <!-- Table rows will be added here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="projects-section section">
+            <h1>Projects</h1>
+            <div class="projects-content">
+                <form id="projectForm" class="project-form">
+                    <div class="form-group">
+                        <label for="projectNameInput">Project Name</label>
+                        <input type="text" id="projectNameInput" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="projectDescriptionInput">Description</label>
+                        <textarea id="projectDescriptionInput"></textarea>
+                    </div>
+                    <button type="submit" class="submit-all-btn">Add Project</button>
+                </form>
+                <div class="projects-table">
                     <table class="excel-form">
                         <thead>
                             <tr>
@@ -286,392 +546,222 @@
                             </tr>
                         </thead>
                         <tbody id="projectTableBody">
-                            <!-- Empty rows will be added here by JavaScript -->
+                            <!-- Project rows will be added here -->
                         </tbody>
                     </table>
                 </div>
             </div>
-
-            <h2>Add New Procurement Items</h2>
-            <div class="excel-form-container">
-                <table class="excel-form" id="procurementForm">
-                    <thead>
-                        <tr>
-                            <th>Specifications</th>
-                            <th>Title/Product</th>
-                            <th>Material ID</th>
-                            <th>Vendor/Trade Partner</th>
-                            <th>Required Onsite Date</th>
-                            <th>Material Lead Time (weeks)</th>
-                            <th>Drop Dead Order Date</th>
-                            <th>Date of Order</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="procurementFormBody">
-                        <!-- Initial empty row -->
-                        <tr class="form-row">
-                            <td><input type="number" class="specifications" min="0" max="99999999" required
-                                    oninput="validateSpecifications(this)"></td>
-                            <td><input type="text" class="title-product" required></td>
-                            <td><input type="text" class="material-id"></td>
-                            <td><input type="text" class="vendor-partner"></td>
-                            <td><input type="date" class="required-onsite-date" required
-                                    onchange="calculateDropDeadDate(this)"></td>
-                            <td><input type="number" class="lead-time" min="0" step="1" required
-                                    onchange="calculateDropDeadDate(this)"></td>
-                            <td><input type="date" class="drop-dead-date" readonly></td>
-                            <td><input type="date" class="order-date" required onchange="updateStatus(this)"></td>
-                            <td><input type="text" class="status" readonly></td>
-                            <td>
-                                <button type="button" class="remove-row-btn" onclick="removeRow(this)">Remove</button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-                <button type="button" class="add-row-btn" onclick="addNewRow()">Add Row</button>
-                <button type="button" class="submit-all-btn" onclick="submitAllItems()">Submit All Items</button>
-            </div>
-
-            <h2>Procurement Log</h2>
-            <table class="excel-form" id="procurementTable">
-                <thead>
-                    <tr>
-                        <th>Specifications</th>
-                        <th>Title/Product</th>
-                        <th>Material ID</th>
-                        <th>Vendor/Trade Partner</th>
-                        <th>Required Onsite Date</th>
-                        <th>Material Lead Time</th>
-                        <th>Drop Dead Order Date</th>
-                        <th>Date of Order</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="procurementTableBody">
-                    <!-- Empty rows will be added here by JavaScript -->
-                </tbody>
-            </table>
         </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- Selectors for Procurement Elements ---
-            const procurementForm = document.getElementById('procurementForm');
-            const procurementTableBody = document.getElementById('procurementTableBody');
-            const projectTableBody = document.getElementById('projectTableBody');
+        // Initialize the page with Procurement section active
+        document.addEventListener('DOMContentLoaded', function () {
+            // Set default section to Procurement
+            showSection('procurement');
 
-            // --- Local Storage Keys ---
-            const localStorageKey = 'procurementItemsList_buildquip';
-            const localStorageKeyProjects = 'buildquip_projectsList';
+            // Load saved items from localStorage
+            loadSavedItems();
+            loadSavedSubmittals();
 
-            // --- Data Initialization ---
-            let procurementItems = loadItemsFromLocalStorage();
-            let projects = loadProjectsFromLocalStorage();
+            // Add click handlers to navigation links
+            document.querySelectorAll('.sidebar-nav a').forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const section = this.getAttribute('data-section');
+                    showSection(section);
 
-            // --- Function Definitions for Procurement Items ---
-            function loadItemsFromLocalStorage() {
-                try {
-                    const itemsJson = localStorage.getItem(localStorageKey);
-                    if (!itemsJson) {
-                        console.log('No existing items found in localStorage');
-                        return [];
-                    }
-                    const items = JSON.parse(itemsJson);
-                    console.log('Loaded items from localStorage:', items);
-                    return Array.isArray(items) ? items : [];
-                } catch (e) {
-                    console.error("Error loading items from localStorage:", e);
-                    return [];
-                }
-            }
-
-            function saveItemsToLocalStorage(items) {
-                try {
-                    if (!Array.isArray(items)) {
-                        throw new Error('Items must be an array');
-                    }
-                    const itemsJson = JSON.stringify(items);
-                    localStorage.setItem(localStorageKey, itemsJson);
-                    console.log('Successfully saved items to localStorage:', items);
-                    return true;
-                } catch (e) {
-                    console.error("Error saving items to localStorage:", e);
-                    return false;
-                }
-            }
-
-            // Submit all items from the form
-            window.submitAllItems = function () {
-                try {
-                    const rows = document.querySelectorAll('.form-row');
-                    const newItems = [];
-                    let hasError = false;
-
-                    rows.forEach((row, index) => {
-                        const specifications = row.querySelector('.specifications').value;
-                        const titleProduct = row.querySelector('.title-product').value;
-                        const materialId = row.querySelector('.material-id').value;
-                        const vendorPartner = row.querySelector('.vendor-partner').value;
-                        const requiredOnsiteDate = row.querySelector('.required-onsite-date').value;
-                        const leadTime = row.querySelector('.lead-time').value;
-                        const dropDeadDate = row.querySelector('.drop-dead-date').value;
-                        const orderDate = row.querySelector('.order-date').value;
-                        const status = row.querySelector('.status').value;
-
-                        if (!specifications || !titleProduct || !requiredOnsiteDate || !leadTime || !orderDate) {
-                            alert(`Row ${index + 1}: All required fields must be filled.`);
-                            hasError = true;
-                            return;
-                        }
-
-                        if (specifications.length > 8) {
-                            alert(`Row ${index + 1}: Specifications must be 8 digits or less.`);
-                            hasError = true;
-                            return;
-                        }
-
-                        newItems.push({
-                            specifications: specifications,
-                            titleProduct: titleProduct,
-                            materialId: materialId,
-                            vendorPartner: vendorPartner,
-                            requiredOnsiteDate: requiredOnsiteDate,
-                            leadTime: leadTime,
-                            dropDeadDate: dropDeadDate,
-                            orderDate: orderDate,
-                            status: status
-                        });
+                    // Update active state in navigation
+                    document.querySelectorAll('.sidebar-nav a').forEach(navLink => {
+                        navLink.classList.remove('active');
                     });
+                    this.classList.add('active');
+                });
+            });
+        });
 
-                    if (!hasError && newItems.length > 0) {
-                        let existingItems = loadItemsFromLocalStorage();
-                        console.log('Existing items:', existingItems);
+        // Function to show the selected section and hide others
+        function showSection(section) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(s => {
+                s.classList.remove('active');
+            });
 
-                        existingItems = [...existingItems, ...newItems];
-                        console.log('Updated items:', existingItems);
-
-                        const saveSuccess = saveItemsToLocalStorage(existingItems);
-
-                        if (saveSuccess) {
-                            procurementItems = existingItems;
-                            renderTable();
-
-                            // Reset the form
-                            const tbody = document.getElementById('procurementFormBody');
-                            const inputs = tbody.querySelectorAll('input');
-                            inputs.forEach(input => {
-                                input.value = '';
-                            });
-
-                            alert('Items added successfully!');
-                        } else {
-                            throw new Error('Failed to save items to localStorage');
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error in submitAllItems:', error);
-                    alert('Error saving items. Please try again. Error: ' + error.message);
-                }
-            };
-
-            // --- Function Definitions for Projects ---
-            function loadProjectsFromLocalStorage() {
-                const projectsJson = localStorage.getItem(localStorageKeyProjects);
-                try {
-                    return projectsJson ? JSON.parse(projectsJson) : [];
-                } catch (e) {
-                    console.error("Error parsing projects from localStorage:", e);
-                    return [];
-                }
+            // Show the selected section
+            const selectedSection = document.querySelector(`.${section}-section`);
+            if (selectedSection) {
+                selectedSection.classList.add('active');
             }
+        }
 
-            function saveProjectsToLocalStorage(projs) {
-                localStorage.setItem(localStorageKeyProjects, JSON.stringify(projs));
+        // Validate specifications input
+        function validateSpecifications(input) {
+            let value = input.value.replace(/\D/g, ''); // Remove non-digits
+            if (value.length > 8) {
+                value = value.slice(0, 8); // Keep only first 8 digits
             }
+            input.value = value;
+        }
 
-            function renderProjects() {
-                if (!projectTableBody) {
-                    console.warn("projectTableBody not found");
-                    return;
-                }
+        // Calculate drop dead date based on required date and lead time
+        function calculateDropDeadDate(input) {
+            const row = input.closest('tr');
+            const requiredDate = row.querySelector('.required-onsite-date').value;
+            const leadTime = row.querySelector('.lead-time').value;
 
-                projectTableBody.innerHTML = '';
+            if (requiredDate && leadTime) {
+                const date = new Date(requiredDate);
+                date.setDate(date.getDate() - (leadTime * 7)); // Convert weeks to days
+                const dropDeadDate = row.querySelector('.drop-dead-date');
+                dropDeadDate.value = date.toISOString().split('T')[0];
 
-                if (projects.length === 0) {
-                    // Add 3 empty rows
-                    for (let i = 0; i < 3; i++) {
-                        const emptyRow = document.createElement('tr');
-                        emptyRow.className = 'empty-row';
-                        ['No project added', 'N/A', 'No description', ''].forEach(text => {
-                            const td = document.createElement('td');
-                            td.textContent = text;
-                            emptyRow.appendChild(td);
-                        });
-                        projectTableBody.appendChild(emptyRow);
-                    }
-                } else {
-                    projects.forEach((project, index) => {
-                        const row = document.createElement('tr');
-
-                        const nameCell = document.createElement('td');
-                        nameCell.textContent = project.name || 'Unnamed Project';
-
-                        const idCell = document.createElement('td');
-                        idCell.textContent = project.id ? project.id.substring(0, 8) + '...' : 'N/A';
-
-                        const descCell = document.createElement('td');
-                        descCell.textContent = project.description || 'No description provided';
-
-                        const actionsCell = document.createElement('td');
-                        const editButton = document.createElement('button');
-                        editButton.textContent = 'Edit';
-                        editButton.onclick = () => editProject(index);
-
-                        const deleteButton = document.createElement('button');
-                        deleteButton.textContent = 'Delete';
-                        deleteButton.onclick = () => deleteProject(index);
-
-                        actionsCell.appendChild(editButton);
-                        actionsCell.appendChild(deleteButton);
-
-                        row.appendChild(nameCell);
-                        row.appendChild(idCell);
-                        row.appendChild(descCell);
-                        row.appendChild(actionsCell);
-
-                        projectTableBody.appendChild(row);
-                    });
+                // Update status if order date exists
+                const orderDate = row.querySelector('.order-date').value;
+                if (orderDate) {
+                    updateStatus(row.querySelector('.order-date'));
                 }
             }
+        }
 
-            function editProject(index) {
-                const project = projects[index];
-                document.getElementById('projectNameInput').value = project.name || '';
-                document.getElementById('projectDescriptionInput').value = project.description || '';
-                // Add logic to handle project editing
-            }
+        // Update status based on order date and drop dead date
+        function updateStatus(input) {
+            const row = input.closest('tr');
+            const orderDate = new Date(input.value);
+            const dropDeadDate = new Date(row.querySelector('.drop-dead-date').value);
+            const status = row.querySelector('.status');
 
-            function deleteProject(index) {
-                if (confirm('Are you sure you want to delete this project?')) {
-                    projects.splice(index, 1);
-                    saveProjectsToLocalStorage(projects);
-                    renderProjects();
-                }
-            }
+            if (orderDate && dropDeadDate) {
+                const diffDays = Math.ceil((orderDate - dropDeadDate) / (1000 * 60 * 60 * 24));
 
-            // --- Function Definitions for Procurement Items ---
-            function calculateStatus(orderDate, dropDeadDate) {
-                if (!orderDate || !dropDeadDate) return { text: '', class: '' };
-
-                const order = new Date(orderDate);
-                const dropDead = new Date(dropDeadDate);
-                const diffDays = Math.floor((dropDead - order) / (1000 * 60 * 60 * 24));
-
-                if (order > dropDead) {
-                    return { text: 'Delayed', class: 'status-delayed' };
+                if (diffDays > 0) {
+                    status.value = 'Delayed';
+                    status.className = 'status status-delayed';
                 } else if (diffDays === 0) {
-                    return { text: 'On Time', class: 'status-ontime' };
-                } else if (diffDays >= 5) {
-                    return { text: 'Early', class: 'status-early' };
-                } else if (diffDays === 1) {
-                    return { text: 'Tracking', class: 'status-tracking' };
-                } else if (diffDays > 0) {
-                    return { text: 'Tracking', class: 'status-tracking' };
-                }
-                return { text: '', class: '' };
-            }
-
-            function renderTable() {
-                if (!procurementTableBody) {
-                    console.warn("procurementTableBody not found");
-                    return;
-                }
-
-                try {
-                    procurementTableBody.innerHTML = '';
-                    console.log('Current procurementItems:', procurementItems);
-
-                    if (!procurementItems || procurementItems.length === 0) {
-                        console.log('No items to display, showing empty rows');
-                        // Add 3 empty rows
-                        for (let i = 0; i < 3; i++) {
-                            const emptyRow = document.createElement('tr');
-                            emptyRow.className = 'empty-row';
-                            ['No item added', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', ''].forEach(text => {
-                                const td = document.createElement('td');
-                                td.textContent = text;
-                                emptyRow.appendChild(td);
-                            });
-                            procurementTableBody.appendChild(emptyRow);
-                        }
-                    } else {
-                        console.log('Rendering items:', procurementItems);
-                        procurementItems.forEach((item, index) => {
-                            const row = document.createElement('tr');
-
-                            // Add all the basic information cells
-                            row.insertCell().textContent = item.specifications || 'N/A';
-                            row.insertCell().textContent = item.titleProduct || 'N/A';
-                            row.insertCell().textContent = item.materialId || 'N/A';
-                            row.insertCell().textContent = item.vendorPartner || 'N/A';
-                            row.insertCell().textContent = item.requiredOnsiteDate || 'N/A';
-                            row.insertCell().textContent = item.leadTime ? `${item.leadTime} weeks` : 'N/A';
-                            row.insertCell().textContent = item.dropDeadDate || 'N/A';
-                            row.insertCell().textContent = item.orderDate || 'N/A';
-
-                            // Calculate and display status with color
-                            const status = calculateStatus(item.orderDate, item.dropDeadDate);
-                            const statusCell = row.insertCell();
-                            statusCell.textContent = status.text;
-                            if (status.class) {
-                                statusCell.classList.add(status.class);
-                            }
-
-                            const actionsCell = row.insertCell();
-                            const editButton = document.createElement('button');
-                            editButton.textContent = 'Edit';
-                            editButton.onclick = () => editItem(index);
-
-                            const deleteButton = document.createElement('button');
-                            deleteButton.textContent = 'Delete';
-                            deleteButton.onclick = () => deleteItem(index);
-
-                            actionsCell.appendChild(editButton);
-                            actionsCell.appendChild(deleteButton);
-
-                            procurementTableBody.appendChild(row);
-                        });
-                    }
-                } catch (error) {
-                    console.error('Error rendering table:', error);
-                    alert('Error displaying items. Please refresh the page.');
+                    status.value = 'On Time';
+                    status.className = 'status status-ontime';
+                } else {
+                    status.value = 'Early';
+                    status.className = 'status status-early';
                 }
             }
+        }
 
-            function editItem(index) {
-                const item = procurementItems[index];
-                // Add logic to handle item editing
-            }
+        // Add new row to procurement form
+        function addNewRow() {
+            const tbody = document.getElementById('procurementFormBody');
+            const newRow = document.createElement('tr');
+            newRow.className = 'form-row';
+            newRow.innerHTML = `
+                <td><input type="text" class="specifications" maxlength="8" pattern="\d{1,8}" required oninput="validateSpecifications(this)" placeholder="Enter 8 digits"></td>
+                <td><input type="text" class="title-product" required></td>
+                <td><input type="text" class="material-id"></td>
+                <td><input type="text" class="vendor-partner"></td>
+                <td><input type="date" class="required-onsite-date" required onchange="calculateDropDeadDate(this)"></td>
+                <td><input type="number" class="lead-time" min="0" step="1" required onchange="calculateDropDeadDate(this)"></td>
+                <td><input type="date" class="drop-dead-date" readonly></td>
+                <td><input type="date" class="order-date" required onchange="updateStatus(this)"></td>
+                <td><input type="text" class="status" readonly></td>
+                <td>
+                    <button type="button" class="remove-row-btn" onclick="removeRow(this)">Remove</button>
+                </td>
+            `;
+            tbody.appendChild(newRow);
+        }
 
-            function deleteItem(index) {
-                if (confirm('Are you sure you want to delete this item?')) {
-                    procurementItems.splice(index, 1);
-                    saveItemsToLocalStorage(procurementItems);
-                    renderTable();
-                }
-            }
+        // Remove row from procurement form
+        function removeRow(button) {
+            const row = button.closest('tr');
+            row.remove();
+        }
 
-            // Add new row to the form
-            window.addNewRow = function () {
-                const tbody = document.getElementById('procurementFormBody');
+        // Load saved items from localStorage
+        function loadSavedItems() {
+            const savedItems = JSON.parse(localStorage.getItem('procurementItems') || '[]');
+            const tableBody = document.getElementById('procurementTableBody');
+
+            savedItems.forEach(item => {
                 const newRow = document.createElement('tr');
-                newRow.className = 'form-row';
                 newRow.innerHTML = `
-                    <td><input type="number" class="specifications" min="0" max="99999999" required oninput="validateSpecifications(this)"></td>
+                    <td>${item.specifications}</td>
+                    <td>${item.titleProduct}</td>
+                    <td>${item.materialId}</td>
+                    <td>${item.vendorPartner}</td>
+                    <td>${item.requiredDate}</td>
+                    <td>${item.leadTime}</td>
+                    <td>${item.dropDeadDate}</td>
+                    <td>${item.orderDate}</td>
+                    <td>${item.status}</td>
+                    <td>
+                        <button type="button" class="remove-row-btn" onclick="removeTableRow(this)">Remove</button>
+                    </td>
+                `;
+                tableBody.appendChild(newRow);
+            });
+        }
+
+        // Save items to localStorage
+        function saveItems() {
+            const tableBody = document.getElementById('procurementTableBody');
+            const items = [];
+
+            tableBody.querySelectorAll('tr').forEach(row => {
+                const cells = row.querySelectorAll('td');
+                items.push({
+                    specifications: cells[0].textContent,
+                    titleProduct: cells[1].textContent,
+                    materialId: cells[2].textContent,
+                    vendorPartner: cells[3].textContent,
+                    requiredDate: cells[4].textContent,
+                    leadTime: cells[5].textContent,
+                    dropDeadDate: cells[6].textContent,
+                    orderDate: cells[7].textContent,
+                    status: cells[8].textContent
+                });
+            });
+
+            localStorage.setItem('procurementItems', JSON.stringify(items));
+        }
+
+        // Submit all items
+        function submitAllItems() {
+            const formRows = document.querySelectorAll('#procurementFormBody tr');
+            const tableBody = document.getElementById('procurementTableBody');
+
+            formRows.forEach(row => {
+                // Only submit if required fields are filled
+                const specifications = row.querySelector('.specifications').value;
+                const titleProduct = row.querySelector('.title-product').value;
+                const requiredDate = row.querySelector('.required-onsite-date').value;
+                const leadTime = row.querySelector('.lead-time').value;
+                const orderDate = row.querySelector('.order-date').value;
+
+                if (specifications && titleProduct && requiredDate && leadTime && orderDate) {
+                    const newRow = document.createElement('tr');
+                    newRow.innerHTML = `
+                        <td>${specifications}</td>
+                        <td>${titleProduct}</td>
+                        <td>${row.querySelector('.material-id').value}</td>
+                        <td>${row.querySelector('.vendor-partner').value}</td>
+                        <td>${requiredDate}</td>
+                        <td>${leadTime}</td>
+                        <td>${row.querySelector('.drop-dead-date').value}</td>
+                        <td>${orderDate}</td>
+                        <td>${row.querySelector('.status').value}</td>
+                        <td>
+                            <button type="button" class="remove-row-btn" onclick="removeTableRow(this)">Remove</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(newRow);
+                }
+            });
+
+            // Save to localStorage after adding new items
+            saveItems();
+
+            // Clear the form
+            document.getElementById('procurementFormBody').innerHTML = `
+                <tr class="form-row">
+                    <td><input type="text" class="specifications" maxlength="8" pattern="\d{1,8}" required oninput="validateSpecifications(this)" placeholder="Enter 8 digits"></td>
                     <td><input type="text" class="title-product" required></td>
                     <td><input type="text" class="material-id"></td>
                     <td><input type="text" class="vendor-partner"></td>
@@ -683,106 +773,192 @@
                     <td>
                         <button type="button" class="remove-row-btn" onclick="removeRow(this)">Remove</button>
                     </td>
+                </tr>
+            `;
+        }
+
+        // Remove row from procurement table
+        function removeTableRow(button) {
+            const row = button.closest('tr');
+            row.remove();
+            // Save to localStorage after removing an item
+            saveItems();
+        }
+
+        // Add new row to submittals form
+        function addNewSubmittalRow() {
+            const tbody = document.getElementById('submittalsFormBody');
+            const newRow = document.createElement('tr');
+            newRow.className = 'form-row';
+            newRow.innerHTML = `
+                <td><input type="text" class="specifications" maxlength="8" pattern="\d{1,8}" required oninput="validateSpecifications(this)" placeholder="Enter 8 digits"></td>
+                <td><input type="text" class="title-product" required></td>
+                <td><input type="text" class="material-id"></td>
+                <td><input type="text" class="vendor-partner"></td>
+                <td><input type="text" class="submittal-manager" required></td>
+                <td>
+                    <select class="submittal-status" required>
+                        <option value="">Select Status</option>
+                        <option value="EAN">EAN</option>
+                        <option value="NEN">NEN</option>
+                        <option value="R&R">R&R</option>
+                        <option value="Closeout">Closeout</option>
+                        <option value="For Record">For Record</option>
+                        <option value="Pending">Pending</option>
+                    </select>
+                </td>
+                <td><input type="date" class="date-received" required></td>
+                <td><input type="date" class="date-sent-design"></td>
+                <td><input type="date" class="due-date" required></td>
+                <td><input type="date" class="date-review-received"></td>
+                <td><input type="date" class="date-issued-sub"></td>
+                <td><input type="text" class="comments"></td>
+                <td>
+                    <button type="button" class="remove-row-btn" onclick="removeSubmittalRow(this)">Remove</button>
+                </td>
+            `;
+            tbody.appendChild(newRow);
+        }
+
+        // Remove row from submittals form
+        function removeSubmittalRow(button) {
+            const row = button.closest('tr');
+            row.remove();
+        }
+
+        // Submit all submittals
+        function submitAllSubmittals() {
+            const formRows = document.querySelectorAll('#submittalsFormBody tr');
+            const tableBody = document.getElementById('submittalsTableBody');
+
+            formRows.forEach(row => {
+                // Only submit if required fields are filled
+                const specifications = row.querySelector('.specifications').value;
+                const titleProduct = row.querySelector('.title-product').value;
+                const submittalManager = row.querySelector('.submittal-manager').value;
+                const submittalStatus = row.querySelector('.submittal-status').value;
+                const dateReceived = row.querySelector('.date-received').value;
+                const dueDate = row.querySelector('.due-date').value;
+
+                if (specifications && titleProduct && submittalManager && submittalStatus && dateReceived && dueDate) {
+                    const newRow = document.createElement('tr');
+                    newRow.innerHTML = `
+                        <td>${specifications}</td>
+                        <td>${titleProduct}</td>
+                        <td>${row.querySelector('.material-id').value}</td>
+                        <td>${row.querySelector('.vendor-partner').value}</td>
+                        <td>${submittalManager}</td>
+                        <td>${submittalStatus}</td>
+                        <td>${dateReceived}</td>
+                        <td>${row.querySelector('.date-sent-design').value}</td>
+                        <td>${dueDate}</td>
+                        <td>${row.querySelector('.date-review-received').value}</td>
+                        <td>${row.querySelector('.date-issued-sub').value}</td>
+                        <td>${row.querySelector('.comments').value}</td>
+                        <td>
+                            <button type="button" class="remove-row-btn" onclick="removeSubmittalTableRow(this)">Remove</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(newRow);
+                }
+            });
+
+            // Save to localStorage after adding new items
+            saveSubmittals();
+
+            // Clear the form
+            document.getElementById('submittalsFormBody').innerHTML = `
+                <tr class="form-row">
+                    <td><input type="text" class="specifications" maxlength="8" pattern="\d{1,8}" required oninput="validateSpecifications(this)" placeholder="Enter 8 digits"></td>
+                    <td><input type="text" class="title-product" required></td>
+                    <td><input type="text" class="material-id"></td>
+                    <td><input type="text" class="vendor-partner"></td>
+                    <td><input type="text" class="submittal-manager" required></td>
+                    <td>
+                        <select class="submittal-status" required>
+                            <option value="">Select Status</option>
+                            <option value="EAN">EAN</option>
+                            <option value="NEN">NEN</option>
+                            <option value="R&R">R&R</option>
+                            <option value="Closeout">Closeout</option>
+                            <option value="For Record">For Record</option>
+                            <option value="Pending">Pending</option>
+                        </select>
+                    </td>
+                    <td><input type="date" class="date-received" required></td>
+                    <td><input type="date" class="date-sent-design"></td>
+                    <td><input type="date" class="due-date" required></td>
+                    <td><input type="date" class="date-review-received"></td>
+                    <td><input type="date" class="date-issued-sub"></td>
+                    <td><input type="text" class="comments"></td>
+                    <td>
+                        <button type="button" class="remove-row-btn" onclick="removeSubmittalRow(this)">Remove</button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        // Remove row from submittals table
+        function removeSubmittalTableRow(button) {
+            const row = button.closest('tr');
+            row.remove();
+            // Save to localStorage after removing an item
+            saveSubmittals();
+        }
+
+        // Save submittals to localStorage
+        function saveSubmittals() {
+            const tableBody = document.getElementById('submittalsTableBody');
+            const items = [];
+
+            tableBody.querySelectorAll('tr').forEach(row => {
+                const cells = row.querySelectorAll('td');
+                items.push({
+                    specifications: cells[0].textContent,
+                    titleProduct: cells[1].textContent,
+                    materialId: cells[2].textContent,
+                    vendorPartner: cells[3].textContent,
+                    submittalManager: cells[4].textContent,
+                    submittalStatus: cells[5].textContent,
+                    dateReceived: cells[6].textContent,
+                    dateSentDesign: cells[7].textContent,
+                    dueDate: cells[8].textContent,
+                    dateReviewReceived: cells[9].textContent,
+                    dateIssuedSub: cells[10].textContent,
+                    comments: cells[11].textContent
+                });
+            });
+
+            localStorage.setItem('submittalsItems', JSON.stringify(items));
+        }
+
+        // Load saved submittals from localStorage
+        function loadSavedSubmittals() {
+            const savedItems = JSON.parse(localStorage.getItem('submittalsItems') || '[]');
+            const tableBody = document.getElementById('submittalsTableBody');
+
+            savedItems.forEach(item => {
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td>${item.specifications}</td>
+                    <td>${item.titleProduct}</td>
+                    <td>${item.materialId}</td>
+                    <td>${item.vendorPartner}</td>
+                    <td>${item.submittalManager}</td>
+                    <td>${item.submittalStatus}</td>
+                    <td>${item.dateReceived}</td>
+                    <td>${item.dateSentDesign}</td>
+                    <td>${item.dueDate}</td>
+                    <td>${item.dateReviewReceived}</td>
+                    <td>${item.dateIssuedSub}</td>
+                    <td>${item.comments}</td>
+                    <td>
+                        <button type="button" class="remove-row-btn" onclick="removeSubmittalTableRow(this)">Remove</button>
+                    </td>
                 `;
-                tbody.appendChild(newRow);
-
-                // Add event listeners for real-time status updates
-                const orderDateInput = newRow.querySelector('.order-date');
-                const requiredDateInput = newRow.querySelector('.required-onsite-date');
-                const leadTimeInput = newRow.querySelector('.lead-time');
-
-                orderDateInput.addEventListener('change', () => updateStatus(orderDateInput));
-                requiredDateInput.addEventListener('change', () => {
-                    calculateDropDeadDate(requiredDateInput);
-                    updateStatus(orderDateInput);
-                });
-                leadTimeInput.addEventListener('change', () => {
-                    calculateDropDeadDate(leadTimeInput);
-                    updateStatus(orderDateInput);
-                });
-            };
-
-            // Remove a row from the form
-            window.removeRow = function (button) {
-                const tbody = document.getElementById('procurementFormBody');
-                if (tbody.children.length > 1) {
-                    button.closest('tr').remove();
-                } else {
-                    alert('Cannot remove the last row. At least one row must remain.');
-                }
-            };
-
-            // Calculate drop dead date
-            window.calculateDropDeadDate = function (input) {
-                const row = input.closest('tr');
-                const requiredDate = row.querySelector('.required-onsite-date').value;
-                const leadTime = row.querySelector('.lead-time').value;
-                const dropDeadInput = row.querySelector('.drop-dead-date');
-
-                if (requiredDate && leadTime) {
-                    const requiredDateObj = new Date(requiredDate);
-                    const dropDeadDate = new Date(requiredDateObj);
-                    dropDeadDate.setDate(dropDeadDate.getDate() - (leadTime * 7));
-                    dropDeadInput.value = dropDeadDate.toISOString().split('T')[0];
-                } else {
-                    dropDeadInput.value = '';
-                }
-            };
-
-            // Update status in real-time
-            window.updateStatus = function (input) {
-                const row = input.closest('tr');
-                const orderDate = row.querySelector('.order-date').value;
-                const dropDeadDate = row.querySelector('.drop-dead-date').value;
-                const statusInput = row.querySelector('.status');
-
-                if (orderDate && dropDeadDate) {
-                    const status = calculateStatus(orderDate, dropDeadDate);
-                    statusInput.value = status.text;
-                    statusInput.className = 'status ' + status.class;
-                }
-            };
-
-            // Add validation for specifications
-            window.validateSpecifications = function (input) {
-                // Remove any non-digit characters
-                input.value = input.value.replace(/[^0-9]/g, '');
-
-                // Ensure the number doesn't exceed 8 digits
-                if (input.value.length > 8) {
-                    input.value = input.value.slice(0, 8);
-                }
-            };
-
-            // --- Event Listeners ---
-            if (document.getElementById('projectForm')) {
-                document.getElementById('projectForm').addEventListener('submit', (event) => {
-                    event.preventDefault();
-                    const projectNameInput = document.getElementById('projectNameInput');
-                    const projectDescriptionInput = document.getElementById('projectDescriptionInput');
-
-                    if (!projectNameInput || !projectNameInput.value.trim()) {
-                        alert('Project name is required.');
-                        return;
-                    }
-
-                    const newProject = {
-                        id: 'proj_' + Date.now() + Math.random().toString(36).substr(2, 9),
-                        name: projectNameInput.value,
-                        description: projectDescriptionInput ? projectDescriptionInput.value : ''
-                    };
-
-                    projects.push(newProject);
-                    saveProjectsToLocalStorage(projects);
-                    renderProjects();
-                    event.target.reset();
-                });
-            }
-
-            // --- Initial Render Calls ---
-            renderTable();
-            renderProjects();
-        });
+                tableBody.appendChild(newRow);
+            });
+        }
     </script>
 </body>
 

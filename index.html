@@ -6,6 +6,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BuildQuip - Procurement Tracker</title>
+    <!-- Add SheetJS library -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -370,6 +372,7 @@
                     <table class="excel-form">
                         <thead>
                             <tr>
+                                <th>Project Name</th>
                                 <th>Specifications</th>
                                 <th>Title/Product</th>
                                 <th>Material ID</th>
@@ -388,6 +391,7 @@
                         <tbody id="submittalsFormBody">
                             <!-- Initial empty row -->
                             <tr class="form-row">
+                                <td><input type="text" class="project-name" readonly></td>
                                 <td><input type="text" class="specifications" maxlength="8" pattern="\d{1,8}" required
                                         oninput="validateSpecifications(this)" placeholder="Enter 8 digits"></td>
                                 <td><input type="text" class="title-product" required></td>
@@ -428,6 +432,7 @@
                     <table class="excel-form">
                         <thead>
                             <tr>
+                                <th>Project Name</th>
                                 <th>Specifications</th>
                                 <th>Title/Product</th>
                                 <th>Material ID</th>
@@ -458,6 +463,7 @@
                     <table class="excel-form">
                         <thead>
                             <tr>
+                                <th>Project Name</th>
                                 <th>Specifications</th>
                                 <th>Title/Product</th>
                                 <th>Material ID</th>
@@ -473,6 +479,7 @@
                         <tbody id="procurementFormBody">
                             <!-- Initial empty row -->
                             <tr class="form-row">
+                                <td><input type="text" class="project-name" readonly></td>
                                 <td><input type="text" class="specifications" maxlength="8" pattern="\d{1,8}" required
                                         oninput="validateSpecifications(this)" placeholder="Enter 8 digits"></td>
                                 <td><input type="text" class="title-product" required></td>
@@ -502,6 +509,7 @@
                     <table class="excel-form">
                         <thead>
                             <tr>
+                                <th>Project Name</th>
                                 <th>Specifications</th>
                                 <th>Title/Product</th>
                                 <th>Material ID</th>
@@ -531,19 +539,27 @@
                         <input type="text" id="projectNameInput" required>
                     </div>
                     <div class="form-group">
-                        <label for="projectDescriptionInput">Description</label>
-                        <textarea id="projectDescriptionInput"></textarea>
+                        <label for="projectBudgetInput">Project Budget</label>
+                        <input type="number" id="projectBudgetInput" required>
                     </div>
-                    <button type="submit" class="submit-all-btn">Add Project</button>
+                    <div class="form-group">
+                        <label for="projectEndDateInput">Target End Date</label>
+                        <input type="date" id="projectEndDateInput" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Upload Material List (optional)</label>
+                        <input type="file" id="materialListFile" accept=".xlsx,.xls,.csv">
+                        <input type="text" id="materialListSheet" placeholder="Paste Google Sheets CSV link">
+                    </div>
+                    <button type="button" onclick="addProject()" class="submit-all-btn">Add Project</button>
                 </form>
                 <div class="projects-table">
                     <table class="excel-form">
                         <thead>
                             <tr>
                                 <th>Project Name</th>
-                                <th>ID</th>
-                                <th>Description</th>
-                                <th>Actions</th>
+                                <th>Budget</th>
+                                <th>Target End Date</th>
                             </tr>
                         </thead>
                         <tbody id="projectTableBody">
@@ -653,6 +669,7 @@
             const newRow = document.createElement('tr');
             newRow.className = 'form-row';
             newRow.innerHTML = `
+                <td><input type="text" class="project-name" readonly></td>
                 <td><input type="text" class="specifications" maxlength="8" pattern="\d{1,8}" required oninput="validateSpecifications(this)" placeholder="Enter 8 digits"></td>
                 <td><input type="text" class="title-product" required></td>
                 <td><input type="text" class="material-id"></td>
@@ -762,6 +779,7 @@
             // Clear the form
             document.getElementById('procurementFormBody').innerHTML = `
                 <tr class="form-row">
+                    <td><input type="text" class="project-name" readonly></td>
                     <td><input type="text" class="specifications" maxlength="8" pattern="\d{1,8}" required oninput="validateSpecifications(this)" placeholder="Enter 8 digits"></td>
                     <td><input type="text" class="title-product" required></td>
                     <td><input type="text" class="material-id"></td>
@@ -792,10 +810,11 @@
             const newRow = document.createElement('tr');
             newRow.className = 'form-row';
             newRow.innerHTML = `
-                <td><input type="text" class="specifications" maxlength="8" pattern="\d{1,8}" required oninput="validateSpecifications(this)" placeholder="Enter 8 digits"></td>
-                <td><input type="text" class="title-product" required></td>
-                <td><input type="text" class="material-id"></td>
-                <td><input type="text" class="vendor-partner"></td>
+                <td><input type="text" class="project-name" value="${data.project}" readonly></td>
+                <td><input type="text" class="specifications" value="${data.specifications}" maxlength="8" pattern="\d{1,8}" required oninput="validateSpecifications(this)" placeholder="Enter 8 digits"></td>
+                <td><input type="text" class="title-product" value="${data.title}" required></td>
+                <td><input type="text" class="material-id" value="${data.materialId}"></td>
+                <td><input type="text" class="vendor-partner" value="${data.vendor}"></td>
                 <td><input type="text" class="submittal-manager" required></td>
                 <td>
                     <select class="submittal-status" required>
@@ -870,6 +889,7 @@
             // Clear the form
             document.getElementById('submittalsFormBody').innerHTML = `
                 <tr class="form-row">
+                    <td><input type="text" class="project-name" readonly></td>
                     <td><input type="text" class="specifications" maxlength="8" pattern="\d{1,8}" required oninput="validateSpecifications(this)" placeholder="Enter 8 digits"></td>
                     <td><input type="text" class="title-product" required></td>
                     <td><input type="text" class="material-id"></td>
@@ -959,6 +979,197 @@
                 `;
                 tableBody.appendChild(newRow);
             });
+        }
+
+        // Project management
+        let projects = JSON.parse(localStorage.getItem('projects') || '[]');
+        let pendingMaterialListRows = null;
+
+        // Listen for file upload in the project form
+        const materialListFileInput = document.getElementById('materialListFile');
+        if (materialListFileInput) {
+            materialListFileInput.addEventListener('change', function (event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                    pendingMaterialListRows = rows;
+                };
+                reader.readAsArrayBuffer(file);
+            });
+        }
+        // Listen for Google Sheets link in the project form
+        const materialListSheetInput = document.getElementById('materialListSheet');
+        if (materialListSheetInput) {
+            materialListSheetInput.addEventListener('blur', function (event) {
+                const url = event.target.value.trim();
+                if (!url) return;
+                fetch(url)
+                    .then(res => res.text())
+                    .then(csv => {
+                        const rows = XLSX.utils.sheet_to_json(XLSX.read(csv, { type: 'string' }).Sheets.Sheet1, { header: 1 });
+                        pendingMaterialListRows = rows;
+                    })
+                    .catch(() => alert('Failed to fetch Google Sheet. Make sure it is published as CSV.'));
+            });
+        }
+        // Update addProject to use pendingMaterialListRows
+        function addProject() {
+            const name = document.getElementById('projectNameInput').value.trim();
+            const budget = document.getElementById('projectBudgetInput').value.trim();
+            const endDate = document.getElementById('projectEndDateInput').value;
+            if (!name || !budget || !endDate) return alert('Fill all fields');
+            projects.push({ name, budget, endDate });
+            localStorage.setItem('projects', JSON.stringify(projects));
+            renderProjects();
+            // If a material list was uploaded, ingest it for this project
+            if (pendingMaterialListRows) {
+                ingestMaterialList(pendingMaterialListRows, name);
+                pendingMaterialListRows = null;
+                document.getElementById('materialListFile').value = '';
+                document.getElementById('materialListSheet').value = '';
+            }
+            document.getElementById('projectForm').reset();
+        }
+        function renderProjects() {
+            const tbody = document.querySelector('#projectTableBody');
+            tbody.innerHTML = '';
+            projects.forEach((p, idx) => {
+                tbody.innerHTML += `<tr>
+                    <td>${p.name}</td>
+                    <td>${p.budget}</td>
+                    <td>${p.endDate}</td>
+                </tr>`;
+            });
+        }
+        window.addEventListener('DOMContentLoaded', renderProjects);
+        // File upload handler
+        function handleFileUpload(event, projectName) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                ingestMaterialList(rows, projectName);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+        // Google Sheets CSV link handler
+        function handleSheetLink(event, projectName) {
+            const url = event.target.value.trim();
+            if (!url) return;
+            fetch(url)
+                .then(res => res.text())
+                .then(csv => {
+                    const rows = XLSX.utils.sheet_to_json(XLSX.read(csv, { type: 'string' }).Sheets.Sheet1, { header: 1 });
+                    ingestMaterialList(rows, projectName);
+                })
+                .catch(() => alert('Failed to fetch Google Sheet. Make sure it is published as CSV.'));
+        }
+        // Ingest and prepopulate Submittals and Procurement
+        function ingestMaterialList(rows, projectName) {
+            if (!rows || rows.length < 2) return alert('No data found');
+            const headers = rows[0].map(h => h.toLowerCase());
+            const specIdx = headers.indexOf('specifications');
+            const titleIdx = headers.indexOf('title/product');
+            const matIdIdx = headers.indexOf('material id');
+            const vendorIdx = headers.indexOf('vendor/partner');
+            if (specIdx === -1 || titleIdx === -1 || matIdIdx === -1 || vendorIdx === -1) {
+                alert('Missing required columns.');
+                return;
+            }
+            // Clear form bodies before adding new rows
+            document.getElementById('submittalsFormBody').innerHTML = '';
+            document.getElementById('procurementFormBody').innerHTML = '';
+            let added = 0;
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                // Prepopulate Submittals
+                addSubmittalRow({
+                    project: projectName,
+                    specifications: row[specIdx] || '',
+                    title: row[titleIdx] || '',
+                    materialId: row[matIdIdx] || '',
+                    vendor: row[vendorIdx] || ''
+                });
+                // Prepopulate Procurement
+                addProcurementRow({
+                    project: projectName,
+                    specifications: row[specIdx] || '',
+                    title: row[titleIdx] || '',
+                    materialId: row[matIdIdx] || '',
+                    vendor: row[vendorIdx] || ''
+                });
+                added++;
+            }
+            // If no rows were added, add a default empty row
+            if (added === 0) {
+                addSubmittalRow({ project: projectName, specifications: '', title: '', materialId: '', vendor: '' });
+                addProcurementRow({ project: projectName, specifications: '', title: '', materialId: '', vendor: '' });
+            }
+        }
+        // Add row helpers (implement these to add a row to the respective tables)
+        function addSubmittalRow(data) {
+            const tbody = document.getElementById('submittalsFormBody');
+            const newRow = document.createElement('tr');
+            newRow.className = 'form-row';
+            newRow.innerHTML = `
+                <td><input type="text" class="project-name" value="${data.project}" readonly></td>
+                <td><input type="text" class="specifications" value="${data.specifications}" maxlength="8" pattern="\d{1,8}" required oninput="validateSpecifications(this)" placeholder="Enter 8 digits"></td>
+                <td><input type="text" class="title-product" value="${data.title}" required></td>
+                <td><input type="text" class="material-id" value="${data.materialId}"></td>
+                <td><input type="text" class="vendor-partner" value="${data.vendor}"></td>
+                <td><input type="text" class="submittal-manager" required></td>
+                <td>
+                    <select class="submittal-status" required>
+                        <option value="">Select Status</option>
+                        <option value="EAN">EAN</option>
+                        <option value="NEN">NEN</option>
+                        <option value="R&R">R&R</option>
+                        <option value="Closeout">Closeout</option>
+                        <option value="For Record">For Record</option>
+                        <option value="Pending">Pending</option>
+                    </select>
+                </td>
+                <td><input type="date" class="date-received" required></td>
+                <td><input type="date" class="date-sent-design"></td>
+                <td><input type="date" class="due-date" required></td>
+                <td><input type="date" class="date-review-received"></td>
+                <td><input type="date" class="date-issued-sub"></td>
+                <td><input type="text" class="comments"></td>
+                <td>
+                    <button type="button" class="remove-row-btn" onclick="removeSubmittalRow(this)">Remove</button>
+                </td>
+            `;
+            tbody.appendChild(newRow);
+        }
+        function addProcurementRow(data) {
+            const tbody = document.getElementById('procurementFormBody');
+            const newRow = document.createElement('tr');
+            newRow.className = 'form-row';
+            newRow.innerHTML = `
+                <td><input type="text" class="project-name" value="${data.project}" readonly></td>
+                <td><input type="text" class="specifications" value="${data.specifications}" maxlength="8" pattern="\d{1,8}" required oninput="validateSpecifications(this)" placeholder="Enter 8 digits"></td>
+                <td><input type="text" class="title-product" value="${data.title}" required></td>
+                <td><input type="text" class="material-id" value="${data.materialId}"></td>
+                <td><input type="text" class="vendor-partner" value="${data.vendor}"></td>
+                <td><input type="date" class="required-onsite-date" required onchange="calculateDropDeadDate(this)"></td>
+                <td><input type="number" class="lead-time" min="0" step="1" required onchange="calculateDropDeadDate(this)"></td>
+                <td><input type="date" class="drop-dead-date" readonly></td>
+                <td><input type="date" class="order-date" required onchange="updateStatus(this)"></td>
+                <td><input type="text" class="status" readonly></td>
+                <td>
+                    <button type="button" class="remove-row-btn" onclick="removeRow(this)">Remove</button>
+                </td>
+            `;
+            tbody.appendChild(newRow);
         }
     </script>
 </body>

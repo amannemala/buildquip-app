@@ -80,21 +80,13 @@ function Dashboard() {
         const procurements = JSON.parse(localStorage.getItem('procurementItems') || '[]');
         const submittals = JSON.parse(localStorage.getItem('submittalsItems') || '[]');
 
-        // Filter by selectedProject
+        // If you want to show delayed items for all projects:
+        // const delayed = procurements.filter(item => item.status === 'Delayed');
+        // If you want to show delayed items for the selected project only:
         const projectProcurements = procurements.filter(item => item.projectName === selectedProject);
-        const projectSubmittals = submittals.filter(item => item.projectName === selectedProject);
-        console.log('Dashboard - projectProcurements:', projectProcurements);
+        const delayed = projectProcurements.filter(item => item.status === 'Delayed');
 
-        // Calculate delayed items for selected project
-        const delayed = projectProcurements.filter(item => {
-            if (!item.requiredOnsiteDate || !item.orderDate) return false;
-            const requiredDate = new Date(item.requiredOnsiteDate);
-            const orderDate = new Date(item.orderDate);
-            const daysUntilRequired = Math.ceil((requiredDate - orderDate) / (1000 * 60 * 60 * 24));
-            return daysUntilRequired < 30;
-        });
-        console.log('Dashboard - delayed:', delayed);
-        console.log('Dashboard - delayed count:', delayed.length);
+        const projectSubmittals = submittals.filter(item => item.projectName === selectedProject);
 
         setStats({
             totalProjects: 1,

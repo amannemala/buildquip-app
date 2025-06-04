@@ -147,8 +147,15 @@ function Dashboard() {
     const handleCommentSubmit = () => {
         if (!selectedItem || !newComment) return;
 
-        const updatedItems = delayedItems.map(item => {
-            if (item.id === selectedItem.id) {
+        // Update the comment for the specific item in procurementItems
+        const allItems = JSON.parse(localStorage.getItem('procurementItems') || '[]');
+        const updatedItems = allItems.map(item => {
+            // Use a unique identifier; fallback to matching by projectName, specifications, and titleProduct
+            if (
+                item.projectName === selectedItem.projectName &&
+                item.specifications === selectedItem.specifications &&
+                item.titleProduct === selectedItem.titleProduct
+            ) {
                 return {
                     ...item,
                     comments: [
@@ -156,18 +163,17 @@ function Dashboard() {
                         {
                             text: newComment,
                             timestamp: new Date().toISOString(),
-                            user: 'Current User' // Replace with actual user
+                            user: 'Current User' // Replace with actual user if available
                         }
                     ]
                 };
             }
             return item;
         });
-
-        setDelayedItems(updatedItems);
-        localStorage.setItem('procurements', JSON.stringify(updatedItems));
+        localStorage.setItem('procurementItems', JSON.stringify(updatedItems));
         setCommentDialogOpen(false);
         setNewComment('');
+        loadData(); // Refresh dashboard data
     };
 
     const handleActionClick = (event, item) => {

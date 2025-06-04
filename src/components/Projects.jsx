@@ -366,6 +366,7 @@ function Projects() {
     const handleFileUpload = (event) => {
         const file = event.target.files[0];
         if (!file) return;
+        console.log('Selected file:', file);
         setFormData(prev => ({
             ...prev,
             materialListFile: file
@@ -453,6 +454,15 @@ function Projects() {
                 const workbook = XLSX.read(data, { type: 'array' });
                 const sheet = workbook.Sheets[workbook.SheetNames[0]];
                 const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                console.log('Parsed rows from file:', rows);
+                if (rows.length > 0) {
+                    const headers = rows[0].map(h => h.toLowerCase());
+                    console.log('Headers:', headers);
+                    console.log('specIdx:', headers.indexOf('specifications'));
+                    console.log('titleIdx:', headers.indexOf('title/product'));
+                    console.log('matIdIdx:', headers.indexOf('material id'));
+                    console.log('vendorIdx:', headers.indexOf('vendor/partner'));
+                }
                 processMaterialList(rows);
                 setShowSuccess(true);
                 setTimeout(() => {

@@ -60,6 +60,19 @@ const PROJECT_STATUS_COLORS = {
     'Delayed': 'error'
 };
 
+function formatCurrency(value) {
+    if (!value) return '';
+    const number = Number(value.toString().replace(/[^\d]/g, ''));
+    if (isNaN(number)) return '';
+    return '$' + number.toLocaleString();
+}
+
+function formatDisplayDate(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: '2-digit' });
+}
+
 function Projects() {
     const [projects, setProjects] = useState([]);
     const [formData, setFormData] = useState({
@@ -141,10 +154,19 @@ function Projects() {
     }, [searchTerm, filters, projects]);
 
     const handleInputChange = (field, value) => {
-        setFormData(prev => ({
-            ...prev,
-            [field]: value,
-        }));
+        if (field === 'projectBudget') {
+            // Only allow numbers, format as currency
+            const number = value.replace(/[^\d]/g, '');
+            setFormData(prev => ({
+                ...prev,
+                [field]: number
+            }));
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                [field]: value,
+            }));
+        }
     };
 
     const processMaterialList = (rows) => {
@@ -391,8 +413,8 @@ function Projects() {
                     />
                     <TextField
                         label="Project Budget"
-                        type="number"
-                        value={formData.projectBudget}
+                        type="text"
+                        value={formatCurrency(formData.projectBudget)}
                         onChange={(e) => handleInputChange('projectBudget', e.target.value)}
                         required
                         fullWidth
@@ -552,10 +574,10 @@ function Projects() {
                                     {project.name}
                                 </Typography>
                                 <Typography color="textSecondary" gutterBottom>
-                                    Budget: ${project.budget}
+                                    Budget: {formatCurrency(project.budget)}
                                 </Typography>
                                 <Typography color="textSecondary" gutterBottom>
-                                    Target End Date: {project.endDate}
+                                    Target End Date: {formatDisplayDate(project.endDate)}
                                 </Typography>
                                 <Box sx={{ mb: 2 }}>
                                     <Chip

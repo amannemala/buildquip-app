@@ -27,6 +27,19 @@ const PROJECT_STATUS_COLORS = {
     'Delayed': 'error'
 };
 
+function formatCurrency(value) {
+    if (!value) return '';
+    const number = Number(value.toString().replace(/[^\d]/g, ''));
+    if (isNaN(number)) return '';
+    return '$' + number.toLocaleString();
+}
+
+function formatDisplayDate(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: '2-digit' });
+}
+
 function Landing() {
     const [projects, setProjects] = useState([]);
     const [visibleProjects, setVisibleProjects] = useState([]);
@@ -134,10 +147,10 @@ function Landing() {
                                     {project.name}
                                 </Typography>
                                 <Typography color="textSecondary" gutterBottom>
-                                    Budget: ${project.budget}
+                                    Budget: {formatCurrency(project.budget)}
                                 </Typography>
                                 <Typography color="textSecondary" gutterBottom>
-                                    Target End Date: {project.endDate}
+                                    Target End Date: {formatDisplayDate(project.endDate)}
                                 </Typography>
                                 <Box sx={{ mb: 2 }}>
                                     <Chip

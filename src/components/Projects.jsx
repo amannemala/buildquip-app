@@ -448,6 +448,9 @@ function Projects() {
         setProjects(updatedProjects);
         localStorage.setItem('projects', JSON.stringify(updatedProjects));
 
+        // Set new project as active
+        localStorage.setItem('activeProject', JSON.stringify(newProject.name));
+
         setFormData({
             projectName: '',
             projectBudget: '',

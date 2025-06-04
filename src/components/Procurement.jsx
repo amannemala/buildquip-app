@@ -85,14 +85,15 @@ function Procurement() {
     }, [selectedProject]);
 
     useEffect(() => {
-        // Load auto-populated rows from localStorage if they exist
+        // Load auto-populated rows from localStorage if they exist and match the active project
         const savedRows = JSON.parse(localStorage.getItem('procurementFormRows') || '[]');
-        if (savedRows.length > 0) {
+        const activeProject = JSON.parse(localStorage.getItem('activeProject') || 'null');
+        if (savedRows.length > 0 && savedRows[0]?.projectName === activeProject) {
             setFormRows(savedRows);
         } else {
             // If no saved rows, create one empty row
             setFormRows([{
-                projectName: JSON.parse(localStorage.getItem('activeProject') || 'null'),
+                projectName: activeProject,
                 specifications: '',
                 titleProduct: '',
                 materialId: '',

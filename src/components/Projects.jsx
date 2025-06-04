@@ -337,6 +337,7 @@ function Projects() {
             vendorPartner: row[vendorIdx]?.toString() || '',
         }));
 
+        console.log('Saving procurementFormRows:', items);
         // Save to localStorage for form rows in both components
         localStorage.setItem('procurementFormRows', JSON.stringify(items.map(item => ({
             ...item,
@@ -347,6 +348,7 @@ function Projects() {
             status: '',
         }))));
 
+        console.log('Saving submittalsFormRows:', items);
         localStorage.setItem('submittalsFormRows', JSON.stringify(items.map(item => ({
             ...item,
             submittalManager: '',

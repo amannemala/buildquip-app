@@ -33,6 +33,9 @@ import {
     Card,
     CardContent,
     CardActions,
+    Snackbar,
+    Alert,
+    CircularProgress,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -43,6 +46,8 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import AddIcon from '@mui/icons-material/Add';
 import MapIcon from '@mui/icons-material/Map';
 import * as XLSX from 'xlsx';
+import { useNavigate } from 'react-router-dom';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 const PROJECT_STATUSES = [
     'Not Started',
@@ -215,6 +220,9 @@ function Projects() {
     const [newKeyplan, setNewKeyplan] = useState({ name: '', file: null });
     const [errors, setErrors] = useState({});
     const [validationMessages, setValidationMessages] = useState({});
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const savedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
@@ -418,6 +426,8 @@ function Projects() {
             return;
         }
 
+        setIsSubmitting(true);
+
         const newProject = {
             name: formData.projectName,
             budget: formData.projectBudget,
@@ -448,6 +458,13 @@ function Projects() {
             materialListSheet: '',
         });
         setErrors({});
+
+        // Show success message and navigate
+        setShowSuccess(true);
+        setTimeout(() => {
+            setIsSubmitting(false);
+            navigate('/procurement');
+        }, 1500);
     };
 
     const handleTeamDialogOpen = (project) => {
@@ -1041,6 +1058,43 @@ function Projects() {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Success Snackbar */}
+            <Snackbar
+                open={showSuccess}
+                autoHideDuration={3000}
+                onClose={() => setShowSuccess(false)}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
+                <Alert
+                    icon={<CheckCircleIcon />}
+                    severity="success"
+                    variant="filled"
+                    sx={{ width: '100%' }}
+                >
+                    Project added successfully!
+                </Alert>
+            </Snackbar>
+
+            {/* Loading Overlay */}
+            {isSubmitting && (
+                <Box
+                    sx={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: 'rgba(255, 255, 255, 0.8)',
+                        zIndex: 9999,
+                    }}
+                >
+                    <CircularProgress />
+                </Box>
+            )}
         </Box>
     );
 }

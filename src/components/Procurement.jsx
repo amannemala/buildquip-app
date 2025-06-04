@@ -16,11 +16,17 @@ import {
     InputLabel,
     Select,
     MenuItem,
+    Snackbar,
+    Alert,
+    CircularProgress,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import { useNavigate } from 'react-router-dom';
 
 function Procurement() {
+    const navigate = useNavigate();
     const [projects, setProjects] = useState([]);
     const [selectedProject, setSelectedProject] = useState('');
     const [formRows, setFormRows] = useState([{
@@ -37,6 +43,8 @@ function Procurement() {
     }]);
     const [tableRows, setTableRows] = useState([]);
     const [editingIndex, setEditingIndex] = useState(null);
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         // Load projects
@@ -75,6 +83,28 @@ function Procurement() {
             status: '',
         }]);
     }, [selectedProject]);
+
+    useEffect(() => {
+        // Load auto-populated rows from localStorage if they exist
+        const savedRows = JSON.parse(localStorage.getItem('procurementFormRows') || '[]');
+        if (savedRows.length > 0) {
+            setFormRows(savedRows);
+        } else {
+            // If no saved rows, create one empty row
+            setFormRows([{
+                projectName: JSON.parse(localStorage.getItem('activeProject') || 'null'),
+                specifications: '',
+                titleProduct: '',
+                materialId: '',
+                vendorPartner: '',
+                requiredOnsiteDate: '',
+                leadTime: '',
+                dropDeadDate: '',
+                orderDate: '',
+                status: '',
+            }]);
+        }
+    }, []);
 
     const validateSpecifications = (value) => {
         return value.replace(/\D/g, '').slice(0, 8);
@@ -161,41 +191,42 @@ function Procurement() {
         localStorage.setItem('procurementItems', JSON.stringify(newTableRows));
     };
 
-    const submitAllItems = () => {
-        const validRows = formRows.filter(row =>
-            row.specifications &&
-            row.titleProduct &&
-            row.requiredOnsiteDate &&
-            row.leadTime &&
-            row.orderDate
+    const handleSubmit = () => {
+        setIsSubmitting(true);
+
+        // Validate required fields
+        const hasErrors = formRows.some(row =>
+            !row.specifications ||
+            !row.titleProduct ||
+            !row.materialId ||
+            !row.vendorPartner
         );
-        if (validRows.length === 0) return;
-        let newTableRows;
-        if (editingIndex !== null) {
-            newTableRows = [...tableRows];
-            newTableRows[editingIndex] = validRows[0];
-            setEditingIndex(null);
-        } else {
-            newTableRows = [...tableRows, ...validRows];
+
+        if (hasErrors) {
+            setErrors(formRows.map(row => ({
+                specifications: !row.specifications,
+                titleProduct: !row.titleProduct,
+                materialId: !row.materialId,
+                vendorPartner: !row.vendorPartner,
+            })));
+            setIsSubmitting(false);
+            return;
         }
-        setTableRows(newTableRows);
-        // Save all procurement items for all projects
-        const allItems = JSON.parse(localStorage.getItem('procurementItems') || '[]');
-        const otherItems = allItems.filter(item => item.projectName !== selectedProject);
-        localStorage.setItem('procurementItems', JSON.stringify([...otherItems, ...newTableRows]));
-        // Reset to a single empty row
-        setFormRows([{
-            projectName: selectedProject,
-            specifications: '',
-            titleProduct: '',
-            materialId: '',
-            vendorPartner: '',
-            requiredOnsiteDate: '',
-            leadTime: '',
-            dropDeadDate: '',
-            orderDate: '',
-            status: '',
-        }]);
+
+        // Save to localStorage
+        const existingItems = JSON.parse(localStorage.getItem('procurementItems') || '[]');
+        const updatedItems = [...existingItems, ...formRows];
+        localStorage.setItem('procurementItems', JSON.stringify(updatedItems));
+
+        // Clear form rows from localStorage
+        localStorage.removeItem('procurementFormRows');
+
+        // Show success message and navigate
+        setShowSuccess(true);
+        setTimeout(() => {
+            setIsSubmitting(false);
+            navigate('/submittals');
+        }, 1500);
     };
 
     const addEmptyRow = () => {
@@ -370,7 +401,7 @@ function Procurement() {
                 <Button
                     variant="contained"
                     color="primary"
-                    onClick={submitAllItems}
+                    onClick={handleSubmit}
                 >
                     {editingIndex !== null ? 'Update Item' : 'Submit All'}
                 </Button>
@@ -455,6 +486,43 @@ function Procurement() {
                     </TableBody>
                 </Table>
             </TableContainer>
+
+            {/* Success Snackbar */}
+            <Snackbar
+                open={showSuccess}
+                autoHideDuration={3000}
+                onClose={() => setShowSuccess(false)}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
+                <Alert
+                    icon={<CheckCircleIcon />}
+                    severity="success"
+                    variant="filled"
+                    sx={{ width: '100%' }}
+                >
+                    Items added successfully!
+                </Alert>
+            </Snackbar>
+
+            {/* Loading Overlay */}
+            {isSubmitting && (
+                <Box
+                    sx={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: 'rgba(255, 255, 255, 0.8)',
+                        zIndex: 9999,
+                    }}
+                >
+                    <CircularProgress />
+                </Box>
+            )}
         </Box>
     );
 }

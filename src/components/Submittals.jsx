@@ -16,9 +16,13 @@ import {
     FormControl,
     InputLabel,
     Select,
+    Snackbar,
+    Alert,
+    CircularProgress,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 const SUBMITTAL_STATUSES = [
     'EAN',
@@ -49,6 +53,8 @@ function Submittals() {
     }]);
     const [tableRows, setTableRows] = useState([]);
     const [editingIndex, setEditingIndex] = useState(null);
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         // Load projects
@@ -90,6 +96,31 @@ function Submittals() {
             comments: '',
         }]);
     }, [selectedProject]);
+
+    useEffect(() => {
+        // Load auto-populated rows from localStorage if they exist
+        const savedRows = JSON.parse(localStorage.getItem('submittalsFormRows') || '[]');
+        if (savedRows.length > 0) {
+            setFormRows(savedRows);
+        } else {
+            // If no saved rows, create one empty row
+            setFormRows([{
+                projectName: JSON.parse(localStorage.getItem('activeProject') || 'null'),
+                specifications: '',
+                titleProduct: '',
+                materialId: '',
+                vendorPartner: '',
+                submittalManager: '',
+                submittalStatus: '',
+                dateReceived: '',
+                dateSentDesign: '',
+                dueDate: '',
+                dateReviewReceived: '',
+                dateIssuedSub: '',
+                comments: '',
+            }]);
+        }
+    }, []);
 
     const validateSpecifications = (value) => {
         return value.replace(/\D/g, '').slice(0, 8);
@@ -163,45 +194,57 @@ function Submittals() {
         localStorage.setItem('submittalsItems', JSON.stringify([...otherItems, ...newTableRows]));
     };
 
-    const submitAllItems = () => {
-        const validRows = formRows.filter(row =>
-            row.specifications &&
-            row.titleProduct &&
-            row.submittalManager &&
-            row.submittalStatus &&
-            row.dateReceived &&
-            row.dueDate
+    const handleSubmit = () => {
+        setIsSubmitting(true);
+
+        // Validate required fields
+        const hasErrors = formRows.some(row =>
+            !row.specifications ||
+            !row.titleProduct ||
+            !row.materialId ||
+            !row.vendorPartner
         );
-        if (validRows.length === 0) return;
-        let newTableRows;
-        if (editingIndex !== null) {
-            newTableRows = [...tableRows];
-            newTableRows[editingIndex] = validRows[0];
-            setEditingIndex(null);
-        } else {
-            newTableRows = [...tableRows, ...validRows];
+
+        if (hasErrors) {
+            setErrors(formRows.map(row => ({
+                specifications: !row.specifications,
+                titleProduct: !row.titleProduct,
+                materialId: !row.materialId,
+                vendorPartner: !row.vendorPartner,
+            })));
+            setIsSubmitting(false);
+            return;
         }
-        setTableRows(newTableRows);
-        // Save all submittals items for all projects
-        const allItems = JSON.parse(localStorage.getItem('submittalsItems') || '[]');
-        const otherItems = allItems.filter(item => item.projectName !== selectedProject);
-        localStorage.setItem('submittalsItems', JSON.stringify([...otherItems, ...newTableRows]));
-        // Reset to a single empty row
-        setFormRows([{
-            projectName: selectedProject,
-            specifications: '',
-            titleProduct: '',
-            materialId: '',
-            vendorPartner: '',
-            submittalManager: '',
-            submittalStatus: '',
-            dateReceived: '',
-            dateSentDesign: '',
-            dueDate: '',
-            dateReviewReceived: '',
-            dateIssuedSub: '',
-            comments: '',
-        }]);
+
+        // Save to localStorage
+        const existingItems = JSON.parse(localStorage.getItem('submittalsItems') || '[]');
+        const updatedItems = [...existingItems, ...formRows];
+        localStorage.setItem('submittalsItems', JSON.stringify(updatedItems));
+
+        // Clear form rows from localStorage
+        localStorage.removeItem('submittalsFormRows');
+
+        // Show success message
+        setShowSuccess(true);
+        setTimeout(() => {
+            setIsSubmitting(false);
+            // Reset to a single empty row
+            setFormRows([{
+                projectName: selectedProject,
+                specifications: '',
+                titleProduct: '',
+                materialId: '',
+                vendorPartner: '',
+                submittalManager: '',
+                submittalStatus: '',
+                dateReceived: '',
+                dateSentDesign: '',
+                dueDate: '',
+                dateReviewReceived: '',
+                dateIssuedSub: '',
+                comments: '',
+            }]);
+        }, 1500);
     };
 
     return (
@@ -390,7 +433,7 @@ function Submittals() {
                 <Button
                     variant="contained"
                     color="primary"
-                    onClick={submitAllItems}
+                    onClick={handleSubmit}
                 >
                     {editingIndex !== null ? 'Update Item' : 'Submit All'}
                 </Button>
@@ -475,6 +518,43 @@ function Submittals() {
                     </TableBody>
                 </Table>
             </TableContainer>
+
+            {/* Success Snackbar */}
+            <Snackbar
+                open={showSuccess}
+                autoHideDuration={3000}
+                onClose={() => setShowSuccess(false)}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
+                <Alert
+                    icon={<CheckCircleIcon />}
+                    severity="success"
+                    variant="filled"
+                    sx={{ width: '100%' }}
+                >
+                    Items added successfully!
+                </Alert>
+            </Snackbar>
+
+            {/* Loading Overlay */}
+            {isSubmitting && (
+                <Box
+                    sx={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: 'rgba(255, 255, 255, 0.8)',
+                        zIndex: 9999,
+                    }}
+                >
+                    <CircularProgress />
+                </Box>
+            )}
         </Box>
     );
 }

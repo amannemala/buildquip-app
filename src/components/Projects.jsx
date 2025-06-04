@@ -366,16 +366,10 @@ function Projects() {
     const handleFileUpload = (event) => {
         const file = event.target.files[0];
         if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const sheet = workbook.Sheets[workbook.SheetNames[0]];
-            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-            processMaterialList(rows);
-        };
-        reader.readAsArrayBuffer(file);
+        setFormData(prev => ({
+            ...prev,
+            materialListFile: file
+        }));
     };
 
     const handleSheetLink = async () => {
@@ -451,6 +445,25 @@ function Projects() {
         // Set new project as active
         localStorage.setItem('activeProject', JSON.stringify(newProject.name));
 
+        // If a material list file is present, process it before navigating
+        if (formData.materialListFile) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                processMaterialList(rows);
+                setShowSuccess(true);
+                setTimeout(() => {
+                    setIsSubmitting(false);
+                    navigate('/procurement');
+                }, 1500);
+            };
+            reader.readAsArrayBuffer(formData.materialListFile);
+            return; // Prevent navigating before file is processed
+        }
+
         setFormData({
             projectName: '',
             projectBudget: '',
@@ -461,13 +474,6 @@ function Projects() {
             materialListSheet: '',
         });
         setErrors({});
-
-        // Show success message and navigate
-        setShowSuccess(true);
-        setTimeout(() => {
-            setIsSubmitting(false);
-            navigate('/procurement');
-        }, 1500);
     };
 
     const handleTeamDialogOpen = (project) => {

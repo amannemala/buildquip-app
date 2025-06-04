@@ -12,11 +12,17 @@ import {
     Button,
     TextField,
     IconButton,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 
 function Procurement() {
+    const [projects, setProjects] = useState([]);
+    const [selectedProject, setSelectedProject] = useState('');
     const [formRows, setFormRows] = useState([{
         projectName: '',
         specifications: '',
@@ -29,21 +35,49 @@ function Procurement() {
         orderDate: '',
         status: '',
     }]);
-
     const [tableRows, setTableRows] = useState([]);
     const [editingIndex, setEditingIndex] = useState(null);
 
     useEffect(() => {
-        // Load saved items from localStorage
-        const savedItems = JSON.parse(localStorage.getItem('procurementItems') || '[]');
-        setTableRows(savedItems);
-
-        // Load form rows from localStorage if they exist
-        const savedFormRows = JSON.parse(localStorage.getItem('procurementFormRows') || '[]');
-        if (savedFormRows.length > 0) {
-            setFormRows(savedFormRows);
+        // Load projects
+        const savedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+        setProjects(savedProjects);
+        const activeProject = JSON.parse(localStorage.getItem('activeProject') || 'null');
+        if (activeProject && savedProjects.some(p => p.name === activeProject)) {
+            setSelectedProject(activeProject);
+        } else if (savedProjects.length > 0) {
+            setSelectedProject(savedProjects[0].name);
         }
     }, []);
+
+    useEffect(() => {
+        if (selectedProject) {
+            localStorage.setItem('activeProject', JSON.stringify(selectedProject));
+        }
+    }, [selectedProject]);
+
+    useEffect(() => {
+        // Load saved items from localStorage for selected project
+        const savedItems = JSON.parse(localStorage.getItem('procurementItems') || '[]');
+        const filteredItems = selectedProject ? savedItems.filter(item => item.projectName === selectedProject) : [];
+        setTableRows(filteredItems);
+
+        // Load form rows from localStorage if they exist for selected project
+        const savedFormRows = JSON.parse(localStorage.getItem('procurementFormRows') || '[]');
+        const filteredFormRows = selectedProject ? savedFormRows.filter(row => row.projectName === selectedProject) : [];
+        setFormRows(filteredFormRows.length > 0 ? filteredFormRows : [{
+            projectName: selectedProject,
+            specifications: '',
+            titleProduct: '',
+            materialId: '',
+            vendorPartner: '',
+            requiredOnsiteDate: '',
+            leadTime: '',
+            dropDeadDate: '',
+            orderDate: '',
+            status: '',
+        }]);
+    }, [selectedProject]);
 
     const validateSpecifications = (value) => {
         return value.replace(/\D/g, '').slice(0, 8);
@@ -69,7 +103,7 @@ function Procurement() {
 
     const addNewRow = () => {
         setFormRows([...formRows, {
-            projectName: '',
+            projectName: selectedProject,
             specifications: '',
             titleProduct: '',
             materialId: '',
@@ -91,6 +125,7 @@ function Procurement() {
         newRows[index] = {
             ...newRows[index],
             [field]: value,
+            projectName: selectedProject,
         };
 
         if (field === 'requiredOnsiteDate' || field === 'leadTime') {
@@ -119,7 +154,7 @@ function Procurement() {
 
     const handleEdit = (index) => {
         const itemToEdit = tableRows[index];
-        setFormRows([itemToEdit]);
+        setFormRows([{ ...itemToEdit, projectName: selectedProject }]);
         setEditingIndex(index);
     };
 
@@ -152,9 +187,12 @@ function Procurement() {
         }
 
         setTableRows(newTableRows);
-        localStorage.setItem('procurementItems', JSON.stringify(newTableRows));
+        // Save all procurement items for all projects
+        const allItems = JSON.parse(localStorage.getItem('procurementItems') || '[]');
+        const otherItems = allItems.filter(item => item.projectName !== selectedProject);
+        localStorage.setItem('procurementItems', JSON.stringify([...otherItems, ...newTableRows]));
         setFormRows([{
-            projectName: '',
+            projectName: selectedProject,
             specifications: '',
             titleProduct: '',
             materialId: '',
@@ -167,17 +205,49 @@ function Procurement() {
         }]);
     };
 
+    const addEmptyRow = () => {
+        setFormRows([
+            ...formRows,
+            {
+                projectName: selectedProject,
+                specifications: '',
+                titleProduct: '',
+                materialId: '',
+                vendorPartner: '',
+                requiredOnsiteDate: '',
+                leadTime: '',
+                dropDeadDate: '',
+                orderDate: '',
+                status: '',
+            },
+        ]);
+    };
+
     return (
         <Box>
-            <Typography variant="h4" gutterBottom>
-                Procurement
-            </Typography>
-
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <FormControl sx={{ minWidth: 240, mr: 2 }}>
+                    <InputLabel>Select Project</InputLabel>
+                    <Select
+                        value={selectedProject}
+                        label="Select Project"
+                        onChange={e => setSelectedProject(e.target.value)}
+                    >
+                        {projects.map(project => (
+                            <MenuItem key={project.name} value={project.name}>{project.name}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+                <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
+                    <Typography variant="h4" gutterBottom>
+                        Procurement
+                    </Typography>
+                </Box>
+            </Box>
             <TableContainer component={Paper} sx={{ mb: 3 }}>
                 <Table>
                     <TableHead>
                         <TableRow>
-                            <TableCell>Project Name</TableCell>
                             <TableCell>Specifications</TableCell>
                             <TableCell>Title/Product</TableCell>
                             <TableCell>Material ID</TableCell>
@@ -193,14 +263,6 @@ function Procurement() {
                     <TableBody>
                         {formRows.map((row, index) => (
                             <TableRow key={index}>
-                                <TableCell>
-                                    <TextField
-                                        value={row.projectName}
-                                        onChange={(e) => handleFormChange(index, 'projectName', e.target.value)}
-                                        fullWidth
-                                        size="small"
-                                    />
-                                </TableCell>
                                 <TableCell>
                                     <TextField
                                         value={row.specifications}
@@ -303,7 +365,6 @@ function Procurement() {
                     </TableBody>
                 </Table>
             </TableContainer>
-
             <Box sx={{ mb: 3 }}>
                 <Button
                     variant="contained"
@@ -327,16 +388,17 @@ function Procurement() {
                         onClick={() => {
                             setEditingIndex(null);
                             setFormRows([{
-                                projectName: '',
-                                specifications: '',
-                                titleProduct: '',
-                                materialId: '',
-                                vendorPartner: '',
-                                requiredOnsiteDate: '',
-                                leadTime: '',
-                                dropDeadDate: '',
-                                orderDate: '',
-                                status: '',
+                                ...formRows[0], ...{
+                                    specifications: '',
+                                    titleProduct: '',
+                                    materialId: '',
+                                    vendorPartner: '',
+                                    requiredOnsiteDate: '',
+                                    leadTime: '',
+                                    dropDeadDate: '',
+                                    orderDate: '',
+                                    status: '',
+                                }
                             }]);
                         }}
                         sx={{ ml: 1 }}
@@ -345,16 +407,16 @@ function Procurement() {
                     </Button>
                 )}
             </Box>
-
+            <Button variant="outlined" onClick={addEmptyRow} sx={{ mb: 2 }}>
+                Add Row
+            </Button>
             <Typography variant="h5" gutterBottom>
                 Procurement Log
             </Typography>
-
             <TableContainer component={Paper}>
                 <Table>
                     <TableHead>
                         <TableRow>
-                            <TableCell>Project Name</TableCell>
                             <TableCell>Specifications</TableCell>
                             <TableCell>Title/Product</TableCell>
                             <TableCell>Material ID</TableCell>
@@ -370,7 +432,6 @@ function Procurement() {
                     <TableBody>
                         {tableRows.map((row, index) => (
                             <TableRow key={index}>
-                                <TableCell>{row.projectName}</TableCell>
                                 <TableCell>{row.specifications}</TableCell>
                                 <TableCell>{row.titleProduct}</TableCell>
                                 <TableCell>{row.materialId}</TableCell>

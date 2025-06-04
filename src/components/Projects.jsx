@@ -29,6 +29,10 @@ import {
     MenuItem,
     FormControl,
     InputLabel,
+    Grid,
+    Card,
+    CardContent,
+    CardActions,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -36,6 +40,8 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import AddIcon from '@mui/icons-material/Add';
+import MapIcon from '@mui/icons-material/Map';
 import * as XLSX from 'xlsx';
 
 const PROJECT_STATUSES = [
@@ -80,14 +86,21 @@ function Projects() {
     });
     const [showFilters, setShowFilters] = useState(false);
     const [filteredProjects, setFilteredProjects] = useState([]);
+    const [projectBreakdown, setProjectBreakdown] = useState({});
+    const [keyplanDialogOpen, setKeyplanDialogOpen] = useState(false);
+    const [selectedArea, setSelectedArea] = useState(null);
+    const [newArea, setNewArea] = useState({ name: '', description: '' });
+    const [newKeyplan, setNewKeyplan] = useState({ name: '', file: null });
 
     useEffect(() => {
         const savedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
         const savedTeamMembers = JSON.parse(localStorage.getItem('projectTeamMembers') || '{}');
         const savedDocuments = JSON.parse(localStorage.getItem('projectDocuments') || '{}');
+        const savedProjectBreakdown = JSON.parse(localStorage.getItem('projectBreakdown') || '{}');
         setProjects(savedProjects);
         setTeamMembers(savedTeamMembers);
         setDocuments(savedDocuments);
+        setProjectBreakdown(savedProjectBreakdown);
         setFilteredProjects(savedProjects);
     }, []);
 
@@ -250,6 +263,8 @@ function Projects() {
             progress: projectProgress,
         };
 
+        console.log('Adding new project:', newProject);
+
         let updatedProjects;
         if (editingIndex !== null) {
             updatedProjects = [...projects];
@@ -259,8 +274,12 @@ function Projects() {
             updatedProjects = [...projects, newProject];
         }
 
+        console.log('Updated projects array:', updatedProjects);
+
         setProjects(updatedProjects);
         localStorage.setItem('projects', JSON.stringify(updatedProjects));
+
+        console.log('Projects in localStorage:', JSON.parse(localStorage.getItem('projects')));
 
         setFormData({
             projectName: '',
@@ -313,6 +332,43 @@ function Projects() {
         setDocuments(updatedDocuments);
         localStorage.setItem('projectDocuments', JSON.stringify(updatedDocuments));
         setNewDocument({ name: '', type: '' });
+    };
+
+    const handleAddArea = () => {
+        if (!newArea.name) return;
+
+        const updatedBreakdown = {
+            ...projectBreakdown,
+            [selectedProject.name]: [
+                ...(projectBreakdown[selectedProject.name] || []),
+                {
+                    id: Date.now(),
+                    ...newArea,
+                    materials: []
+                }
+            ]
+        };
+
+        setProjectBreakdown(updatedBreakdown);
+        localStorage.setItem('projectBreakdown', JSON.stringify(updatedBreakdown));
+        setNewArea({ name: '', description: '' });
+    };
+
+    const handleKeyplanUpload = (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const updatedBreakdown = {
+            ...projectBreakdown,
+            [selectedProject.name]: (projectBreakdown[selectedProject.name] || []).map(area =>
+                area.id === selectedArea.id
+                    ? { ...area, keyplan: { name: file.name, file: URL.createObjectURL(file) } }
+                    : area
+            )
+        };
+
+        setProjectBreakdown(updatedBreakdown);
+        localStorage.setItem('projectBreakdown', JSON.stringify(updatedBreakdown));
     };
 
     return (
@@ -487,64 +543,89 @@ function Projects() {
                 )}
             </Box>
 
-            <TableContainer component={Paper}>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>Project Name</TableCell>
-                            <TableCell>Budget</TableCell>
-                            <TableCell>Target End Date</TableCell>
-                            <TableCell>Status</TableCell>
-                            <TableCell>Progress</TableCell>
-                            <TableCell>Actions</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {filteredProjects.map((project, index) => (
-                            <TableRow key={index}>
-                                <TableCell>{project.name}</TableCell>
-                                <TableCell>${project.budget}</TableCell>
-                                <TableCell>{project.endDate}</TableCell>
-                                <TableCell>
+            <Grid container spacing={3}>
+                {filteredProjects.map((project, index) => (
+                    <Grid item xs={12} md={6} key={index}>
+                        <Card>
+                            <CardContent>
+                                <Typography variant="h6" gutterBottom>
+                                    {project.name}
+                                </Typography>
+                                <Typography color="textSecondary" gutterBottom>
+                                    Budget: ${project.budget}
+                                </Typography>
+                                <Typography color="textSecondary" gutterBottom>
+                                    Target End Date: {project.endDate}
+                                </Typography>
+                                <Box sx={{ mb: 2 }}>
                                     <Chip
                                         label={project.status || 'Not Started'}
                                         color={PROJECT_STATUS_COLORS[project.status || 'Not Started']}
                                         size="small"
                                     />
-                                </TableCell>
-                                <TableCell>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <LinearProgress
-                                            variant="determinate"
-                                            value={project.progress || 0}
-                                            sx={{ flexGrow: 1 }}
-                                        />
-                                        <Typography variant="body2">
-                                            {project.progress || 0}%
-                                        </Typography>
-                                    </Box>
-                                </TableCell>
-                                <TableCell>
-                                    <Stack direction="row" spacing={1}>
-                                        <IconButton onClick={() => handleEdit(index)} color="primary">
-                                            <EditIcon />
-                                        </IconButton>
-                                        <IconButton onClick={() => handleDelete(index)} color="error">
-                                            <DeleteIcon />
-                                        </IconButton>
-                                        <IconButton onClick={() => handleTeamDialogOpen(project)} color="primary">
-                                            <PersonAddIcon />
-                                        </IconButton>
-                                        <IconButton onClick={() => handleDocumentsDialogOpen(project)} color="primary">
-                                            <AttachFileIcon />
-                                        </IconButton>
-                                    </Stack>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </TableContainer>
+                                </Box>
+                                <Box sx={{ mb: 2 }}>
+                                    <Typography variant="body2" gutterBottom>
+                                        Progress
+                                    </Typography>
+                                    <LinearProgress
+                                        variant="determinate"
+                                        value={project.progress || 0}
+                                        sx={{ mb: 1 }}
+                                    />
+                                    <Typography variant="body2">
+                                        {project.progress || 0}%
+                                    </Typography>
+                                </Box>
+                                <Typography variant="subtitle2" gutterBottom>
+                                    Project Areas
+                                </Typography>
+                                <List dense>
+                                    {(projectBreakdown[project.name] || []).map((area) => (
+                                        <ListItem
+                                            key={area.id}
+                                            secondaryAction={
+                                                <IconButton
+                                                    edge="end"
+                                                    onClick={() => {
+                                                        setSelectedArea(area);
+                                                        setKeyplanDialogOpen(true);
+                                                    }}
+                                                >
+                                                    <MapIcon />
+                                                </IconButton>
+                                            }
+                                        >
+                                            <ListItemText
+                                                primary={area.name}
+                                                secondary={area.description}
+                                            />
+                                        </ListItem>
+                                    ))}
+                                </List>
+                            </CardContent>
+                            <CardActions>
+                                <Button
+                                    size="small"
+                                    startIcon={<AddIcon />}
+                                    onClick={() => {
+                                        setSelectedProject(project);
+                                        setTeamDialogOpen(true);
+                                    }}
+                                >
+                                    Add Area
+                                </Button>
+                                <IconButton onClick={() => handleEdit(index)} color="primary">
+                                    <EditIcon />
+                                </IconButton>
+                                <IconButton onClick={() => handleDelete(index)} color="error">
+                                    <DeleteIcon />
+                                </IconButton>
+                            </CardActions>
+                        </Card>
+                    </Grid>
+                ))}
+            </Grid>
 
             {/* Team Members Dialog */}
             <Dialog open={teamDialogOpen} onClose={() => setTeamDialogOpen(false)} maxWidth="sm" fullWidth>
@@ -639,6 +720,85 @@ function Projects() {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setDocumentsDialogOpen(false)}>Close</Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Keyplan Dialog */}
+            <Dialog
+                open={keyplanDialogOpen}
+                onClose={() => setKeyplanDialogOpen(false)}
+                maxWidth="md"
+                fullWidth
+            >
+                <DialogTitle>
+                    Keyplan - {selectedArea?.name}
+                </DialogTitle>
+                <DialogContent>
+                    {selectedArea?.keyplan ? (
+                        <Box>
+                            <Typography variant="subtitle1" gutterBottom>
+                                Current Keyplan: {selectedArea.keyplan.name}
+                            </Typography>
+                            <img
+                                src={selectedArea.keyplan.file}
+                                alt="Keyplan"
+                                style={{ width: '100%', height: 'auto' }}
+                            />
+                        </Box>
+                    ) : (
+                        <Typography>No keyplan uploaded yet</Typography>
+                    )}
+                    <Box sx={{ mt: 2 }}>
+                        <TextField
+                            type="file"
+                            label="Upload Keyplan"
+                            onChange={handleKeyplanUpload}
+                            fullWidth
+                            InputLabelProps={{ shrink: true }}
+                            inputProps={{
+                                accept: 'image/*,.pdf'
+                            }}
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setKeyplanDialogOpen(false)}>Close</Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Add Area Dialog */}
+            <Dialog
+                open={teamDialogOpen}
+                onClose={() => setTeamDialogOpen(false)}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>
+                    Add Project Area - {selectedProject?.name}
+                </DialogTitle>
+                <DialogContent>
+                    <Stack spacing={2} sx={{ mt: 2 }}>
+                        <TextField
+                            label="Area Name"
+                            value={newArea.name}
+                            onChange={(e) => setNewArea({ ...newArea, name: e.target.value })}
+                            fullWidth
+                        />
+                        <TextField
+                            label="Description"
+                            value={newArea.description}
+                            onChange={(e) => setNewArea({ ...newArea, description: e.target.value })}
+                            fullWidth
+                            multiline
+                            rows={3}
+                        />
+                    </Stack>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setTeamDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleAddArea} variant="contained">
+                        Add Area
+                    </Button>
                 </DialogActions>
             </Dialog>
         </Box>

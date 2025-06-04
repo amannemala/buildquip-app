@@ -13,6 +13,9 @@ import {
     TextField,
     IconButton,
     MenuItem,
+    FormControl,
+    InputLabel,
+    Select,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -27,6 +30,8 @@ const SUBMITTAL_STATUSES = [
 ];
 
 function Submittals() {
+    const [projects, setProjects] = useState([]);
+    const [selectedProject, setSelectedProject] = useState('');
     const [formRows, setFormRows] = useState([{
         projectName: '',
         specifications: '',
@@ -42,21 +47,52 @@ function Submittals() {
         dateIssuedSub: '',
         comments: '',
     }]);
-
     const [tableRows, setTableRows] = useState([]);
     const [editingIndex, setEditingIndex] = useState(null);
 
     useEffect(() => {
-        // Load saved items from localStorage
-        const savedItems = JSON.parse(localStorage.getItem('submittalsItems') || '[]');
-        setTableRows(savedItems);
-
-        // Load form rows from localStorage if they exist
-        const savedFormRows = JSON.parse(localStorage.getItem('submittalsFormRows') || '[]');
-        if (savedFormRows.length > 0) {
-            setFormRows(savedFormRows);
+        // Load projects
+        const savedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+        setProjects(savedProjects);
+        const activeProject = JSON.parse(localStorage.getItem('activeProject') || 'null');
+        if (activeProject && savedProjects.some(p => p.name === activeProject)) {
+            setSelectedProject(activeProject);
+        } else if (savedProjects.length > 0) {
+            setSelectedProject(savedProjects[0].name);
         }
     }, []);
+
+    useEffect(() => {
+        if (selectedProject) {
+            localStorage.setItem('activeProject', JSON.stringify(selectedProject));
+        }
+    }, [selectedProject]);
+
+    useEffect(() => {
+        // Load saved items from localStorage for selected project
+        const savedItems = JSON.parse(localStorage.getItem('submittalsItems') || '[]');
+        const filteredItems = selectedProject ? savedItems.filter(item => item.projectName === selectedProject) : [];
+        setTableRows(filteredItems);
+
+        // Load form rows from localStorage if they exist for selected project
+        const savedFormRows = JSON.parse(localStorage.getItem('submittalsFormRows') || '[]');
+        const filteredFormRows = selectedProject ? savedFormRows.filter(row => row.projectName === selectedProject) : [];
+        setFormRows(filteredFormRows.length > 0 ? filteredFormRows : [{
+            projectName: selectedProject,
+            specifications: '',
+            titleProduct: '',
+            materialId: '',
+            vendorPartner: '',
+            submittalManager: '',
+            submittalStatus: '',
+            dateReceived: '',
+            dateSentDesign: '',
+            dueDate: '',
+            dateReviewReceived: '',
+            dateIssuedSub: '',
+            comments: '',
+        }]);
+    }, [selectedProject]);
 
     const validateSpecifications = (value) => {
         return value.replace(/\D/g, '').slice(0, 8);
@@ -64,7 +100,7 @@ function Submittals() {
 
     const addNewRow = () => {
         setFormRows([...formRows, {
-            projectName: '',
+            projectName: selectedProject,
             specifications: '',
             titleProduct: '',
             materialId: '',
@@ -80,6 +116,27 @@ function Submittals() {
         }]);
     };
 
+    const addEmptyRow = () => {
+        setFormRows([
+            ...formRows,
+            {
+                projectName: selectedProject,
+                specifications: '',
+                titleProduct: '',
+                materialId: '',
+                vendorPartner: '',
+                submittalManager: '',
+                submittalStatus: '',
+                dateReceived: '',
+                dateSentDesign: '',
+                dueDate: '',
+                dateReviewReceived: '',
+                dateIssuedSub: '',
+                comments: '',
+            },
+        ]);
+    };
+
     const removeRow = (index) => {
         setFormRows(formRows.filter((_, i) => i !== index));
     };
@@ -89,20 +146,24 @@ function Submittals() {
         newRows[index] = {
             ...newRows[index],
             [field]: value,
+            projectName: selectedProject,
         };
         setFormRows(newRows);
     };
 
     const handleEdit = (index) => {
         const itemToEdit = tableRows[index];
-        setFormRows([itemToEdit]);
+        setFormRows([{ ...itemToEdit, projectName: selectedProject }]);
         setEditingIndex(index);
     };
 
     const handleDelete = (index) => {
         const newTableRows = tableRows.filter((_, i) => i !== index);
         setTableRows(newTableRows);
-        localStorage.setItem('submittalsItems', JSON.stringify(newTableRows));
+        // Save all submittals items for all projects
+        const allItems = JSON.parse(localStorage.getItem('submittalsItems') || '[]');
+        const otherItems = allItems.filter(item => item.projectName !== selectedProject);
+        localStorage.setItem('submittalsItems', JSON.stringify([...otherItems, ...newTableRows]));
     };
 
     const submitAllItems = () => {
@@ -114,24 +175,22 @@ function Submittals() {
             row.dateReceived &&
             row.dueDate
         );
-
         if (validRows.length === 0) return;
-
         let newTableRows;
         if (editingIndex !== null) {
-            // Update existing row
             newTableRows = [...tableRows];
             newTableRows[editingIndex] = validRows[0];
             setEditingIndex(null);
         } else {
-            // Add new rows
             newTableRows = [...tableRows, ...validRows];
         }
-
         setTableRows(newTableRows);
-        localStorage.setItem('submittalsItems', JSON.stringify(newTableRows));
+        // Save all submittals items for all projects
+        const allItems = JSON.parse(localStorage.getItem('submittalsItems') || '[]');
+        const otherItems = allItems.filter(item => item.projectName !== selectedProject);
+        localStorage.setItem('submittalsItems', JSON.stringify([...otherItems, ...newTableRows]));
         setFormRows([{
-            projectName: '',
+            projectName: selectedProject,
             specifications: '',
             titleProduct: '',
             materialId: '',
@@ -149,15 +208,29 @@ function Submittals() {
 
     return (
         <Box>
-            <Typography variant="h4" gutterBottom>
-                Submittals
-            </Typography>
-
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <FormControl sx={{ minWidth: 240, mr: 2 }}>
+                    <InputLabel>Select Project</InputLabel>
+                    <Select
+                        value={selectedProject}
+                        label="Select Project"
+                        onChange={e => setSelectedProject(e.target.value)}
+                    >
+                        {projects.map(project => (
+                            <MenuItem key={project.name} value={project.name}>{project.name}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+                <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
+                    <Typography variant="h4" gutterBottom>
+                        Submittals
+                    </Typography>
+                </Box>
+            </Box>
             <TableContainer component={Paper} sx={{ mb: 3 }}>
                 <Table>
                     <TableHead>
                         <TableRow>
-                            <TableCell>Project Name</TableCell>
                             <TableCell>Specifications</TableCell>
                             <TableCell>Title/Product</TableCell>
                             <TableCell>Material ID</TableCell>
@@ -176,14 +249,6 @@ function Submittals() {
                     <TableBody>
                         {formRows.map((row, index) => (
                             <TableRow key={index}>
-                                <TableCell>
-                                    <TextField
-                                        value={row.projectName}
-                                        onChange={(e) => handleFormChange(index, 'projectName', e.target.value)}
-                                        fullWidth
-                                        size="small"
-                                    />
-                                </TableCell>
                                 <TableCell>
                                     <TextField
                                         value={row.specifications}
@@ -325,6 +390,14 @@ function Submittals() {
                     Add Row
                 </Button>
                 <Button
+                    variant="outlined"
+                    color="secondary"
+                    onClick={addEmptyRow}
+                    sx={{ mr: 1 }}
+                >
+                    Add Empty Row
+                </Button>
+                <Button
                     variant="contained"
                     color="primary"
                     onClick={submitAllItems}
@@ -338,19 +411,20 @@ function Submittals() {
                         onClick={() => {
                             setEditingIndex(null);
                             setFormRows([{
-                                projectName: '',
-                                specifications: '',
-                                titleProduct: '',
-                                materialId: '',
-                                vendorPartner: '',
-                                submittalManager: '',
-                                submittalStatus: '',
-                                dateReceived: '',
-                                dateSentDesign: '',
-                                dueDate: '',
-                                dateReviewReceived: '',
-                                dateIssuedSub: '',
-                                comments: '',
+                                ...formRows[0], ...{
+                                    specifications: '',
+                                    titleProduct: '',
+                                    materialId: '',
+                                    vendorPartner: '',
+                                    submittalManager: '',
+                                    submittalStatus: '',
+                                    dateReceived: '',
+                                    dateSentDesign: '',
+                                    dueDate: '',
+                                    dateReviewReceived: '',
+                                    dateIssuedSub: '',
+                                    comments: '',
+                                }
                             }]);
                         }}
                         sx={{ ml: 1 }}
@@ -368,7 +442,6 @@ function Submittals() {
                 <Table>
                     <TableHead>
                         <TableRow>
-                            <TableCell>Project Name</TableCell>
                             <TableCell>Specifications</TableCell>
                             <TableCell>Title/Product</TableCell>
                             <TableCell>Material ID</TableCell>
@@ -387,7 +460,6 @@ function Submittals() {
                     <TableBody>
                         {tableRows.map((row, index) => (
                             <TableRow key={index}>
-                                <TableCell>{row.projectName}</TableCell>
                                 <TableCell>{row.specifications}</TableCell>
                                 <TableCell>{row.titleProduct}</TableCell>
                                 <TableCell>{row.materialId}</TableCell>

@@ -12,13 +12,21 @@ import {
     Copy
 } from 'lucide-react';
 import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography } from '@mui/material';
+import HomeIcon from '@mui/icons-material/Home';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import FolderIcon from '@mui/icons-material/Folder';
+import { useNavigate } from 'react-router-dom';
 
 const Sidebar = ({ activeSection, onSectionChange }) => {
+    const navigate = useNavigate();
     const menuItems = [
-        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { id: 'submittals', label: 'Submittals', icon: Briefcase },
-        { id: 'procurement', label: 'Procurement', icon: Package },
-        { id: 'projects', label: 'Projects', icon: Users },
+        { id: 'landing', label: 'Landing Page', icon: <HomeIcon />, path: '/' },
+        { id: 'dashboard', label: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
+        { id: 'submittals', label: 'Submittals', icon: <AssignmentIcon />, path: '/submittals' },
+        { id: 'procurement', label: 'Procurement', icon: <ShoppingCartIcon />, path: '/procurement' },
+        { id: 'projects', label: 'Projects', icon: <FolderIcon />, path: '/projects' },
     ];
 
     return (
@@ -54,7 +62,10 @@ const Sidebar = ({ activeSection, onSectionChange }) => {
                 {menuItems.map((item) => (
                     <ListItem key={item.id} disablePadding>
                         <ListItemButton
-                            onClick={() => onSectionChange(item.id)}
+                            onClick={() => {
+                                onSectionChange(item.id);
+                                navigate(item.path);
+                            }}
                             selected={activeSection === item.id}
                             sx={{
                                 color: 'white',
@@ -67,7 +78,7 @@ const Sidebar = ({ activeSection, onSectionChange }) => {
                             }}
                         >
                             <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
-                                {React.createElement(item.icon, { size: 20 })}
+                                {item.icon}
                             </ListItemIcon>
                             <ListItemText primary={item.label} />
                         </ListItemButton>

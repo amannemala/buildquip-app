@@ -197,6 +197,7 @@ function Projects() {
         projectProgress: 0,
         materialListFile: null,
         materialListSheet: '',
+        areas: [],
     });
     const [editingIndex, setEditingIndex] = useState(null);
     const [teamDialogOpen, setTeamDialogOpen] = useState(false);
@@ -397,6 +398,7 @@ function Projects() {
             projectProgress: 0,
             materialListFile: null,
             materialListSheet: '',
+            areas: [],
         });
         setErrors({});
     };
@@ -435,6 +437,7 @@ function Projects() {
             projectProgress: projectToEdit.progress || 0,
             materialListFile: null,
             materialListSheet: '',
+            areas: projectToEdit.areas || [],
         });
         setEditingIndex(index);
     };
@@ -467,6 +470,7 @@ function Projects() {
             endDate: formData.projectEndDate,
             status: formData.projectStatus,
             progress: formData.projectProgress,
+            areas: formData.areas,
         };
 
         let updatedProjects;
@@ -520,6 +524,7 @@ function Projects() {
             projectProgress: 0,
             materialListFile: null,
             materialListSheet: '',
+            areas: [],
         });
         setErrors({});
     };
@@ -656,6 +661,35 @@ function Projects() {
         setValidationMessages(prev => ({ ...prev, keyplan: null }));
     };
 
+    // Add area row
+    const handleAddAreaRow = () => {
+        setFormData(prev => ({
+            ...prev,
+            areas: [
+                ...prev.areas,
+                { name: '', description: '' }
+            ]
+        }));
+    };
+
+    // Update area row
+    const handleAreaChange = (index, field, value) => {
+        setFormData(prev => ({
+            ...prev,
+            areas: prev.areas.map((area, i) =>
+                i === index ? { ...area, [field]: value } : area
+            )
+        }));
+    };
+
+    // Remove area row
+    const handleRemoveAreaRow = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            areas: prev.areas.filter((_, i) => i !== index)
+        }));
+    };
+
     return (
         <Box>
             <Typography variant="h4" gutterBottom>
@@ -709,6 +743,45 @@ function Projects() {
                             ))}
                         </Select>
                     </FormControl>
+
+                    {/* Add Area Button and Area Rows */}
+                    <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={handleAddAreaRow}
+                        sx={{ mt: 2, mb: 1 }}
+                    >
+                        Add Area
+                    </Button>
+                    {formData.areas.length > 0 && (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
+                            {formData.areas.map((area, idx) => (
+                                <Box key={idx} sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                                    <TextField
+                                        label="Area Name"
+                                        value={area.name}
+                                        onChange={e => handleAreaChange(idx, 'name', e.target.value)}
+                                        size="small"
+                                        sx={{ flex: 1 }}
+                                    />
+                                    <TextField
+                                        label="Description"
+                                        value={area.description}
+                                        onChange={e => handleAreaChange(idx, 'description', e.target.value)}
+                                        size="small"
+                                        sx={{ flex: 2 }}
+                                    />
+                                    <Button
+                                        color="error"
+                                        onClick={() => handleRemoveAreaRow(idx)}
+                                        sx={{ minWidth: 0, px: 1 }}
+                                    >
+                                        Remove
+                                    </Button>
+                                </Box>
+                            ))}
+                        </Box>
+                    )}
                     <Box>
                         <Typography gutterBottom>Project Progress</Typography>
                         <Stack direction="row" spacing={2} alignItems="center">
@@ -766,6 +839,7 @@ function Projects() {
                                         projectProgress: 0,
                                         materialListFile: null,
                                         materialListSheet: '',
+                                        areas: [],
                                     });
                                 }}
                             >
@@ -1077,42 +1151,6 @@ function Projects() {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setKeyplanDialogOpen(false)}>Close</Button>
-                </DialogActions>
-            </Dialog>
-
-            {/* Add Area Dialog */}
-            <Dialog
-                open={teamDialogOpen}
-                onClose={() => setTeamDialogOpen(false)}
-                maxWidth="sm"
-                fullWidth
-            >
-                <DialogTitle>
-                    Add Project Area - {selectedProject?.name}
-                </DialogTitle>
-                <DialogContent>
-                    <Stack spacing={2} sx={{ mt: 2 }}>
-                        <TextField
-                            label="Area Name"
-                            value={newArea.name}
-                            onChange={(e) => setNewArea({ ...newArea, name: e.target.value })}
-                            fullWidth
-                        />
-                        <TextField
-                            label="Description"
-                            value={newArea.description}
-                            onChange={(e) => setNewArea({ ...newArea, description: e.target.value })}
-                            fullWidth
-                            multiline
-                            rows={3}
-                        />
-                    </Stack>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setTeamDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={handleAddArea} variant="contained">
-                        Add Area
-                    </Button>
                 </DialogActions>
             </Dialog>
 

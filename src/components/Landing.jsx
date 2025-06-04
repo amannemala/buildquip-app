@@ -123,59 +123,82 @@ function Landing() {
                 Your Projects
             </Typography>
             <Grid container spacing={3}>
-                {shownProjects.map((project, index) => (
-                    <Grid item xs={12} md={6} key={index}>
-                        <Card
-                            sx={{ position: 'relative', cursor: 'pointer' }}
-                            onClick={() => {
-                                localStorage.setItem('activeProject', JSON.stringify(project.name));
-                                navigate('/dashboard');
-                            }}
-                        >
-                            <IconButton
-                                sx={{ position: 'absolute', top: 8, right: 8, zIndex: 1 }}
-                                color="error"
-                                onClick={e => {
-                                    e.stopPropagation();
-                                    handleRemove(project.name);
+                {shownProjects.map((project, index) => {
+                    const isPastDue = new Date(project.endDate) < new Date();
+                    return (
+                        <Grid item xs={12} md={6} key={index}>
+                            <Card
+                                sx={{
+                                    position: 'relative',
+                                    cursor: 'pointer',
+                                    border: isPastDue ? '2px solid' : 'none',
+                                    borderColor: 'error.main'
+                                }}
+                                onClick={() => {
+                                    localStorage.setItem('activeProject', JSON.stringify(project.name));
+                                    navigate('/dashboard');
                                 }}
                             >
-                                <RemoveCircleOutlineIcon />
-                            </IconButton>
-                            <CardContent>
-                                <Typography variant="h6" gutterBottom>
-                                    {project.name}
-                                </Typography>
-                                <Typography color="textSecondary" gutterBottom>
-                                    Budget: {formatCurrency(project.budget)}
-                                </Typography>
-                                <Typography color="textSecondary" gutterBottom>
-                                    Target End Date: {formatDisplayDate(project.endDate)}
-                                </Typography>
-                                <Box sx={{ mb: 2 }}>
-                                    <Chip
-                                        label={project.status || 'Not Started'}
-                                        color={PROJECT_STATUS_COLORS[project.status || 'Not Started']}
-                                        size="small"
-                                    />
-                                </Box>
-                                <Box sx={{ mb: 2 }}>
-                                    <Typography variant="body2" gutterBottom>
-                                        Progress
+                                <IconButton
+                                    sx={{ position: 'absolute', top: 8, right: 8, zIndex: 1 }}
+                                    color="error"
+                                    onClick={e => {
+                                        e.stopPropagation();
+                                        handleRemove(project.name);
+                                    }}
+                                >
+                                    <RemoveCircleOutlineIcon />
+                                </IconButton>
+                                <CardContent>
+                                    <Typography variant="h6" gutterBottom>
+                                        {project.name}
                                     </Typography>
-                                    <LinearProgress
-                                        variant="determinate"
-                                        value={project.progress || 0}
-                                        sx={{ mb: 1 }}
-                                    />
-                                    <Typography variant="body2">
-                                        {project.progress || 0}%
+                                    <Typography color="textSecondary" gutterBottom>
+                                        Budget: {formatCurrency(project.budget)}
                                     </Typography>
-                                </Box>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                ))}
+                                    <Typography
+                                        color={isPastDue ? "error" : "textSecondary"}
+                                        gutterBottom
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 1
+                                        }}
+                                    >
+                                        Target End Date: {formatDisplayDate(project.endDate)}
+                                        {isPastDue && (
+                                            <Chip
+                                                label="Past Due"
+                                                color="error"
+                                                size="small"
+                                            />
+                                        )}
+                                    </Typography>
+                                    <Box sx={{ mb: 2 }}>
+                                        <Chip
+                                            label={project.status || 'Not Started'}
+                                            color={PROJECT_STATUS_COLORS[project.status || 'Not Started']}
+                                            size="small"
+                                        />
+                                    </Box>
+                                    <Box sx={{ mb: 2 }}>
+                                        <Typography variant="body2" gutterBottom>
+                                            Progress
+                                        </Typography>
+                                        <LinearProgress
+                                            variant="determinate"
+                                            value={project.progress || 0}
+                                            sx={{ mb: 1 }}
+                                        />
+                                        <Typography variant="body2">
+                                            {project.progress || 0}%
+                                        </Typography>
+                                    </Box>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                    );
+                })}
             </Grid>
             <Stack direction="row" justifyContent="center" sx={{ mt: 4 }}>
                 <Button

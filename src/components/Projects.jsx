@@ -60,6 +60,17 @@ const PROJECT_STATUS_COLORS = {
     'Delayed': 'error'
 };
 
+// Add validation constants
+const VALIDATION_RULES = {
+    MIN_BUDGET: 1000,
+    MAX_BUDGET: 1000000000,
+    MAX_PROJECT_NAME_LENGTH: 100,
+    MAX_AREA_NAME_LENGTH: 50,
+    MAX_DOCUMENT_SIZE_MB: 10,
+    MAX_TEAM_MEMBERS: 20,
+    MAX_AREAS: 50,
+};
+
 function formatCurrency(value) {
     if (!value) return '';
     const number = Number(value.toString().replace(/[^\d]/g, ''));
@@ -71,6 +82,104 @@ function formatDisplayDate(dateStr) {
     if (!dateStr) return '';
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: '2-digit' });
+}
+
+// Add validation functions
+function validateProjectName(name, existingProjects) {
+    if (!name || name.trim().length === 0) {
+        return 'Project name is required';
+    }
+    if (name.length > VALIDATION_RULES.MAX_PROJECT_NAME_LENGTH) {
+        return `Project name must be less than ${VALIDATION_RULES.MAX_PROJECT_NAME_LENGTH} characters`;
+    }
+    if (existingProjects.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+        return 'Project name already exists';
+    }
+    return null;
+}
+
+function validateBudget(budget) {
+    const numBudget = Number(budget.toString().replace(/[^\d]/g, ''));
+    if (isNaN(numBudget)) {
+        return 'Budget must be a valid number';
+    }
+    if (numBudget < VALIDATION_RULES.MIN_BUDGET) {
+        return `Budget must be at least $${VALIDATION_RULES.MIN_BUDGET.toLocaleString()}`;
+    }
+    if (numBudget > VALIDATION_RULES.MAX_BUDGET) {
+        return `Budget cannot exceed $${VALIDATION_RULES.MAX_BUDGET.toLocaleString()}`;
+    }
+    return null;
+}
+
+function validateEndDate(date, isNewProject = true) {
+    if (!date) {
+        return 'Target end date is required';
+    }
+    const selectedDate = new Date(date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (isNewProject && selectedDate < today) {
+        return 'Target end date cannot be in the past for new projects';
+    }
+    return null;
+}
+
+function validateProgress(progress, status) {
+    const numProgress = Number(progress);
+    if (isNaN(numProgress) || numProgress < 0 || numProgress > 100) {
+        return 'Progress must be between 0 and 100';
+    }
+    if (status === 'Completed' && numProgress !== 100) {
+        return 'Completed projects must have 100% progress';
+    }
+    if (status === 'Not Started' && numProgress !== 0) {
+        return 'Not started projects must have 0% progress';
+    }
+    return null;
+}
+
+function validateTeamMember(member, existingMembers) {
+    if (!member.name || !member.role) {
+        return 'Name and role are required';
+    }
+    if (existingMembers.some(m => m.name.toLowerCase() === member.name.toLowerCase())) {
+        return 'Team member already exists';
+    }
+    return null;
+}
+
+function validateDocument(doc, existingDocs) {
+    if (!doc.name || !doc.type) {
+        return 'Document name and type are required';
+    }
+    if (existingDocs.some(d => d.name.toLowerCase() === doc.name.toLowerCase())) {
+        return 'Document already exists';
+    }
+    return null;
+}
+
+function validateArea(area, existingAreas) {
+    if (!area.name || area.name.trim().length === 0) {
+        return 'Area name is required';
+    }
+    if (area.name.length > VALIDATION_RULES.MAX_AREA_NAME_LENGTH) {
+        return `Area name must be less than ${VALIDATION_RULES.MAX_AREA_NAME_LENGTH} characters`;
+    }
+    if (existingAreas.some(a => a.name.toLowerCase() === area.name.toLowerCase())) {
+        return 'Area name already exists';
+    }
+    return null;
+}
+
+function validateFileSize(file) {
+    if (!file) return null;
+    const maxSize = VALIDATION_RULES.MAX_DOCUMENT_SIZE_MB * 1024 * 1024;
+    if (file.size > maxSize) {
+        return `File size must be less than ${VALIDATION_RULES.MAX_DOCUMENT_SIZE_MB}MB`;
+    }
+    return null;
 }
 
 function Projects() {
@@ -104,6 +213,8 @@ function Projects() {
     const [selectedArea, setSelectedArea] = useState(null);
     const [newArea, setNewArea] = useState({ name: '', description: '' });
     const [newKeyplan, setNewKeyplan] = useState({ name: '', file: null });
+    const [errors, setErrors] = useState({});
+    const [validationMessages, setValidationMessages] = useState({});
 
     useEffect(() => {
         const savedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
@@ -154,19 +265,42 @@ function Projects() {
     }, [searchTerm, filters, projects]);
 
     const handleInputChange = (field, value) => {
+        let error = null;
+
         if (field === 'projectBudget') {
-            // Only allow numbers, format as currency
             const number = value.replace(/[^\d]/g, '');
             setFormData(prev => ({
                 ...prev,
                 [field]: number
             }));
+            error = validateBudget(number);
+        } else if (field === 'projectEndDate') {
+            setFormData(prev => ({
+                ...prev,
+                [field]: value
+            }));
+            error = validateEndDate(value, editingIndex === null);
+        } else if (field === 'projectProgress') {
+            const progress = Math.min(100, Math.max(0, Number(value)));
+            setFormData(prev => ({
+                ...prev,
+                [field]: progress
+            }));
+            error = validateProgress(progress, formData.projectStatus);
         } else {
             setFormData(prev => ({
                 ...prev,
-                [field]: value,
+                [field]: value
             }));
+            if (field === 'projectName') {
+                error = validateProjectName(value, projects);
+            }
         }
+
+        setErrors(prev => ({
+            ...prev,
+            [field]: error
+        }));
     };
 
     const processMaterialList = (rows) => {
@@ -271,21 +405,26 @@ function Projects() {
     };
 
     const addProject = () => {
-        const { projectName, projectBudget, projectEndDate, projectStatus, projectProgress } = formData;
-        if (!projectName || !projectBudget || !projectEndDate) {
-            alert('Please fill all required fields');
+        const validations = {
+            projectName: validateProjectName(formData.projectName, projects),
+            projectBudget: validateBudget(formData.projectBudget),
+            projectEndDate: validateEndDate(formData.projectEndDate, editingIndex === null),
+            projectProgress: validateProgress(formData.projectProgress, formData.projectStatus)
+        };
+
+        setErrors(validations);
+
+        if (Object.values(validations).some(error => error !== null)) {
             return;
         }
 
         const newProject = {
-            name: projectName,
-            budget: projectBudget,
-            endDate: projectEndDate,
-            status: projectStatus,
-            progress: projectProgress,
+            name: formData.projectName,
+            budget: formData.projectBudget,
+            endDate: formData.projectEndDate,
+            status: formData.projectStatus,
+            progress: formData.projectProgress,
         };
-
-        console.log('Adding new project:', newProject);
 
         let updatedProjects;
         if (editingIndex !== null) {
@@ -296,12 +435,8 @@ function Projects() {
             updatedProjects = [...projects, newProject];
         }
 
-        console.log('Updated projects array:', updatedProjects);
-
         setProjects(updatedProjects);
         localStorage.setItem('projects', JSON.stringify(updatedProjects));
-
-        console.log('Projects in localStorage:', JSON.parse(localStorage.getItem('projects')));
 
         setFormData({
             projectName: '',
@@ -312,6 +447,7 @@ function Projects() {
             materialListFile: null,
             materialListSheet: '',
         });
+        setErrors({});
     };
 
     const handleTeamDialogOpen = (project) => {
@@ -325,12 +461,28 @@ function Projects() {
     };
 
     const addTeamMember = () => {
-        if (!newTeamMember.name || !newTeamMember.role) return;
+        const existingMembers = teamMembers[selectedProject.name] || [];
+        if (existingMembers.length >= VALIDATION_RULES.MAX_TEAM_MEMBERS) {
+            setValidationMessages(prev => ({
+                ...prev,
+                teamMember: `Maximum ${VALIDATION_RULES.MAX_TEAM_MEMBERS} team members allowed`
+            }));
+            return;
+        }
+
+        const error = validateTeamMember(newTeamMember, existingMembers);
+        if (error) {
+            setValidationMessages(prev => ({
+                ...prev,
+                teamMember: error
+            }));
+            return;
+        }
 
         const updatedTeamMembers = {
             ...teamMembers,
             [selectedProject.name]: [
-                ...(teamMembers[selectedProject.name] || []),
+                ...existingMembers,
                 newTeamMember
             ]
         };
@@ -338,15 +490,24 @@ function Projects() {
         setTeamMembers(updatedTeamMembers);
         localStorage.setItem('projectTeamMembers', JSON.stringify(updatedTeamMembers));
         setNewTeamMember({ name: '', role: '' });
+        setValidationMessages(prev => ({ ...prev, teamMember: null }));
     };
 
     const addDocument = () => {
-        if (!newDocument.name || !newDocument.type) return;
+        const existingDocs = documents[selectedProject.name] || [];
+        const error = validateDocument(newDocument, existingDocs);
+        if (error) {
+            setValidationMessages(prev => ({
+                ...prev,
+                document: error
+            }));
+            return;
+        }
 
         const updatedDocuments = {
             ...documents,
             [selectedProject.name]: [
-                ...(documents[selectedProject.name] || []),
+                ...existingDocs,
                 newDocument
             ]
         };
@@ -354,15 +515,32 @@ function Projects() {
         setDocuments(updatedDocuments);
         localStorage.setItem('projectDocuments', JSON.stringify(updatedDocuments));
         setNewDocument({ name: '', type: '' });
+        setValidationMessages(prev => ({ ...prev, document: null }));
     };
 
     const handleAddArea = () => {
-        if (!newArea.name) return;
+        const existingAreas = projectBreakdown[selectedProject.name] || [];
+        if (existingAreas.length >= VALIDATION_RULES.MAX_AREAS) {
+            setValidationMessages(prev => ({
+                ...prev,
+                area: `Maximum ${VALIDATION_RULES.MAX_AREAS} areas allowed per project`
+            }));
+            return;
+        }
+
+        const error = validateArea(newArea, existingAreas);
+        if (error) {
+            setValidationMessages(prev => ({
+                ...prev,
+                area: error
+            }));
+            return;
+        }
 
         const updatedBreakdown = {
             ...projectBreakdown,
             [selectedProject.name]: [
-                ...(projectBreakdown[selectedProject.name] || []),
+                ...existingAreas,
                 {
                     id: Date.now(),
                     ...newArea,
@@ -374,11 +552,21 @@ function Projects() {
         setProjectBreakdown(updatedBreakdown);
         localStorage.setItem('projectBreakdown', JSON.stringify(updatedBreakdown));
         setNewArea({ name: '', description: '' });
+        setValidationMessages(prev => ({ ...prev, area: null }));
     };
 
     const handleKeyplanUpload = (event) => {
         const file = event.target.files[0];
         if (!file) return;
+
+        const error = validateFileSize(file);
+        if (error) {
+            setValidationMessages(prev => ({
+                ...prev,
+                keyplan: error
+            }));
+            return;
+        }
 
         const updatedBreakdown = {
             ...projectBreakdown,
@@ -391,6 +579,7 @@ function Projects() {
 
         setProjectBreakdown(updatedBreakdown);
         localStorage.setItem('projectBreakdown', JSON.stringify(updatedBreakdown));
+        setValidationMessages(prev => ({ ...prev, keyplan: null }));
     };
 
     return (
@@ -410,6 +599,8 @@ function Projects() {
                         onChange={(e) => handleInputChange('projectName', e.target.value)}
                         required
                         fullWidth
+                        error={!!errors.projectName}
+                        helperText={errors.projectName}
                     />
                     <TextField
                         label="Project Budget"
@@ -418,6 +609,8 @@ function Projects() {
                         onChange={(e) => handleInputChange('projectBudget', e.target.value)}
                         required
                         fullWidth
+                        error={!!errors.projectBudget}
+                        helperText={errors.projectBudget}
                     />
                     <TextField
                         label="Target End Date"
@@ -427,6 +620,8 @@ function Projects() {
                         required
                         fullWidth
                         InputLabelProps={{ shrink: true }}
+                        error={!!errors.projectEndDate}
+                        helperText={errors.projectEndDate}
                     />
                     <FormControl fullWidth>
                         <InputLabel>Project Status</InputLabel>
@@ -566,87 +761,105 @@ function Projects() {
             </Box>
 
             <Grid container spacing={3}>
-                {filteredProjects.map((project, index) => (
-                    <Grid item xs={12} md={6} key={index}>
-                        <Card>
-                            <CardContent>
-                                <Typography variant="h6" gutterBottom>
-                                    {project.name}
-                                </Typography>
-                                <Typography color="textSecondary" gutterBottom>
-                                    Budget: {formatCurrency(project.budget)}
-                                </Typography>
-                                <Typography color="textSecondary" gutterBottom>
-                                    Target End Date: {formatDisplayDate(project.endDate)}
-                                </Typography>
-                                <Box sx={{ mb: 2 }}>
-                                    <Chip
-                                        label={project.status || 'Not Started'}
-                                        color={PROJECT_STATUS_COLORS[project.status || 'Not Started']}
-                                        size="small"
-                                    />
-                                </Box>
-                                <Box sx={{ mb: 2 }}>
-                                    <Typography variant="body2" gutterBottom>
-                                        Progress
+                {filteredProjects.map((project, index) => {
+                    const isPastDue = new Date(project.endDate) < new Date();
+                    return (
+                        <Grid item xs={12} md={6} key={index}>
+                            <Card>
+                                <CardContent>
+                                    <Typography variant="h6" gutterBottom>
+                                        {project.name}
                                     </Typography>
-                                    <LinearProgress
-                                        variant="determinate"
-                                        value={project.progress || 0}
-                                        sx={{ mb: 1 }}
-                                    />
-                                    <Typography variant="body2">
-                                        {project.progress || 0}%
+                                    <Typography color="textSecondary" gutterBottom>
+                                        Budget: {formatCurrency(project.budget)}
                                     </Typography>
-                                </Box>
-                                <Typography variant="subtitle2" gutterBottom>
-                                    Project Areas
-                                </Typography>
-                                <List dense>
-                                    {(projectBreakdown[project.name] || []).map((area) => (
-                                        <ListItem
-                                            key={area.id}
-                                            secondaryAction={
-                                                <IconButton
-                                                    edge="end"
-                                                    onClick={() => {
-                                                        setSelectedArea(area);
-                                                        setKeyplanDialogOpen(true);
-                                                    }}
-                                                >
-                                                    <MapIcon />
-                                                </IconButton>
-                                            }
-                                        >
-                                            <ListItemText
-                                                primary={area.name}
-                                                secondary={area.description}
+                                    <Typography
+                                        color={isPastDue ? "error" : "textSecondary"}
+                                        gutterBottom
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 1
+                                        }}
+                                    >
+                                        Target End Date: {formatDisplayDate(project.endDate)}
+                                        {isPastDue && (
+                                            <Chip
+                                                label="Past Due"
+                                                color="error"
+                                                size="small"
                                             />
-                                        </ListItem>
-                                    ))}
-                                </List>
-                            </CardContent>
-                            <CardActions>
-                                <Button
-                                    size="small"
-                                    startIcon={<AddIcon />}
-                                    onClick={() => {
-                                        setSelectedProject(project);
-                                        setTeamDialogOpen(true);
-                                    }}
-                                >
-                                    Add Area
-                                </Button>
-                                <IconButton onClick={() => handleEdit(index)} color="primary">
-                                    <EditIcon />
-                                </IconButton>
-                                <IconButton onClick={() => handleDelete(index)} color="error">
-                                    <DeleteIcon />
-                                </IconButton>
-                            </CardActions>
-                        </Card>
-                    </Grid>
-                ))}
+                                        )}
+                                    </Typography>
+                                    <Box sx={{ mb: 2 }}>
+                                        <Chip
+                                            label={project.status || 'Not Started'}
+                                            color={PROJECT_STATUS_COLORS[project.status || 'Not Started']}
+                                            size="small"
+                                        />
+                                    </Box>
+                                    <Box sx={{ mb: 2 }}>
+                                        <Typography variant="body2" gutterBottom>
+                                            Progress
+                                        </Typography>
+                                        <LinearProgress
+                                            variant="determinate"
+                                            value={project.progress || 0}
+                                            sx={{ mb: 1 }}
+                                        />
+                                        <Typography variant="body2">
+                                            {project.progress || 0}%
+                                        </Typography>
+                                    </Box>
+                                    <Typography variant="subtitle2" gutterBottom>
+                                        Project Areas
+                                    </Typography>
+                                    <List dense>
+                                        {(projectBreakdown[project.name] || []).map((area) => (
+                                            <ListItem
+                                                key={area.id}
+                                                secondaryAction={
+                                                    <IconButton
+                                                        edge="end"
+                                                        onClick={() => {
+                                                            setSelectedArea(area);
+                                                            setKeyplanDialogOpen(true);
+                                                        }}
+                                                    >
+                                                        <MapIcon />
+                                                    </IconButton>
+                                                }
+                                            >
+                                                <ListItemText
+                                                    primary={area.name}
+                                                    secondary={area.description}
+                                                />
+                                            </ListItem>
+                                        ))}
+                                    </List>
+                                </CardContent>
+                                <CardActions>
+                                    <Button
+                                        size="small"
+                                        startIcon={<AddIcon />}
+                                        onClick={() => {
+                                            setSelectedProject(project);
+                                            setTeamDialogOpen(true);
+                                        }}
+                                    >
+                                        Add Area
+                                    </Button>
+                                    <IconButton onClick={() => handleEdit(index)} color="primary">
+                                        <EditIcon />
+                                    </IconButton>
+                                    <IconButton onClick={() => handleDelete(index)} color="error">
+                                        <DeleteIcon />
+                                    </IconButton>
+                                </CardActions>
+                            </Card>
+                        </Grid>
+                    );
+                })}
             </Grid>
 
             {/* Team Members Dialog */}
@@ -655,6 +868,11 @@ function Projects() {
                     Team Members - {selectedProject?.name}
                 </DialogTitle>
                 <DialogContent>
+                    {validationMessages.teamMember && (
+                        <Typography color="error" sx={{ mb: 2 }}>
+                            {validationMessages.teamMember}
+                        </Typography>
+                    )}
                     <List>
                         {(teamMembers[selectedProject?.name] || []).map((member, index) => (
                             <ListItem key={index}>

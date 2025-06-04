@@ -58,7 +58,18 @@ function Landing() {
     };
 
     const handleRemove = (name) => {
-        setVisibleProjects(visibleProjects.filter(n => n !== name));
+        setVisibleProjects(prev => {
+            const updated = prev.filter(n => n !== name);
+            // If the removed project is the activeProject, update activeProject if needed
+            const activeProject = JSON.parse(localStorage.getItem('activeProject') || 'null');
+            if (activeProject === name) {
+                if (updated.length > 0) {
+                    localStorage.setItem('activeProject', JSON.stringify(updated[0]));
+                }
+                // If updated is empty, keep the previous activeProject
+            }
+            return updated;
+        });
     };
 
     const hiddenProjects = projects.filter(p => !visibleProjects.includes(p.name));

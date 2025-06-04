@@ -53,10 +53,6 @@ function Dashboard() {
     const [actionMenuAnchor, setActionMenuAnchor] = useState(null);
     const [selectedItemForAction, setSelectedItemForAction] = useState(null);
     const [projects, setProjects] = useState([]);
-    const [selectedProjects, setSelectedProjects] = useState([]);
-    const [drawerOpen, setDrawerOpen] = useState(false);
-    const [addProjectDialogOpen, setAddProjectDialogOpen] = useState(false);
-    const [availableProjects, setAvailableProjects] = useState([]);
     const [selectedProject, setSelectedProject] = useState('');
 
     useEffect(() => {
@@ -84,14 +80,13 @@ function Dashboard() {
         const procurements = JSON.parse(localStorage.getItem('procurementItems') || '[]');
         const submittals = JSON.parse(localStorage.getItem('submittalsItems') || '[]');
 
-        // Only use selectedProject for filtering
-        console.log('Dashboard - selectedProject:', selectedProject);
-        const selectedProcurements = procurements.filter(item =>
-            item.projectName === selectedProject
-        );
-        console.log('Dashboard - selectedProcurements:', selectedProcurements);
+        // Filter by selectedProject
+        const projectProcurements = procurements.filter(item => item.projectName === selectedProject);
+        const projectSubmittals = submittals.filter(item => item.projectName === selectedProject);
+        console.log('Dashboard - projectProcurements:', projectProcurements);
 
-        const delayed = selectedProcurements.filter(item => {
+        // Calculate delayed items for selected project
+        const delayed = projectProcurements.filter(item => {
             if (!item.requiredOnsiteDate || !item.orderDate) return false;
             const requiredDate = new Date(item.requiredOnsiteDate);
             const orderDate = new Date(item.orderDate);
@@ -99,11 +94,12 @@ function Dashboard() {
             return daysUntilRequired < 30;
         });
         console.log('Dashboard - delayed:', delayed);
+        console.log('Dashboard - delayed count:', delayed.length);
 
         setStats({
-            totalProjects: projectsData.length,
-            totalProcurements: procurements.length,
-            totalSubmittals: submittals.length,
+            totalProjects: 1,
+            totalProcurements: projectProcurements.length,
+            totalSubmittals: projectSubmittals.length,
             delayedItems: delayed.length,
         });
 
@@ -126,42 +122,6 @@ function Dashboard() {
             case 'Delayed': return 'error';
             default: return 'default';
         }
-    };
-
-    const handleProjectToggle = (projectName) => {
-        const newSelectedProjects = selectedProjects.includes(projectName)
-            ? selectedProjects.filter(p => p !== projectName)
-            : [...selectedProjects, projectName];
-
-        setSelectedProjects(newSelectedProjects);
-        localStorage.setItem('selectedProjects', JSON.stringify(newSelectedProjects));
-
-        // Update delayed items based on selected projects
-        const procurements = JSON.parse(localStorage.getItem('procurements') || '[]');
-        const selectedProcurements = procurements.filter(item =>
-            newSelectedProjects.includes(item.projectName)
-        );
-
-        const delayed = selectedProcurements.filter(item => {
-            if (!item.requiredOnsiteDate || !item.orderDate) return false;
-            const requiredDate = new Date(item.requiredOnsiteDate);
-            const orderDate = new Date(item.orderDate);
-            const daysUntilRequired = Math.ceil((requiredDate - orderDate) / (1000 * 60 * 60 * 24));
-            return daysUntilRequired < 30;
-        });
-
-        setDelayedItems(delayed);
-    };
-
-    const groupItemsByProject = (items) => {
-        return items.reduce((groups, item) => {
-            const project = item.projectName;
-            if (!groups[project]) {
-                groups[project] = [];
-            }
-            groups[project].push(item);
-            return groups;
-        }, {});
     };
 
     const getRiskLevel = (item) => {
@@ -224,36 +184,6 @@ function Dashboard() {
         // Implement action handlers here
         console.log(`Action ${action} selected for item:`, selectedItemForAction);
         handleActionClose();
-    };
-
-    const handleAddProject = (projectName) => {
-        if (!selectedProjects.includes(projectName)) {
-            const newSelectedProjects = [...selectedProjects, projectName];
-            setSelectedProjects(newSelectedProjects);
-            localStorage.setItem('selectedProjects', JSON.stringify(newSelectedProjects));
-
-            // Load procurements for the newly added project
-            const procurements = JSON.parse(localStorage.getItem('procurements') || '[]');
-            const projectProcurements = procurements.filter(item => item.projectName === projectName);
-
-            // Update delayed items
-            const delayed = projectProcurements.filter(item => {
-                if (!item.requiredOnsiteDate || !item.orderDate) return false;
-                const requiredDate = new Date(item.requiredOnsiteDate);
-                const orderDate = new Date(item.orderDate);
-                const daysUntilRequired = Math.ceil((requiredDate - orderDate) / (1000 * 60 * 60 * 24));
-                return daysUntilRequired < 30;
-            });
-
-            setDelayedItems(prev => [...prev, ...delayed]);
-        }
-        setAddProjectDialogOpen(false);
-    };
-
-    const handleRemoveProject = (projectName) => {
-        const newSelectedProjects = selectedProjects.filter(p => p !== projectName);
-        setSelectedProjects(newSelectedProjects);
-        localStorage.setItem('selectedProjects', JSON.stringify(newSelectedProjects));
     };
 
     return (
@@ -327,201 +257,87 @@ function Dashboard() {
             </Grid>
 
             <Paper sx={{ p: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <Typography variant="h6">
                         Risk Alerts
                     </Typography>
-                    <Tooltip title="Add Project">
-                        <IconButton onClick={() => setAddProjectDialogOpen(true)}>
-                            <AddIcon />
-                        </IconButton>
-                    </Tooltip>
                 </Box>
-
-                {Object.entries(groupItemsByProject(delayedItems.filter(item =>
-                    selectedProjects.includes(item.projectName)
-                ))).map(([projectName, items]) => (
-                    <Box key={projectName} sx={{ mb: 4 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                            <Typography variant="h6" sx={{ color: 'primary.main' }}>
-                                {projectName}
-                            </Typography>
-                            <Tooltip title="Remove Project">
-                                <IconButton
-                                    size="small"
-                                    onClick={() => handleRemoveProject(projectName)}
-                                >
-                                    <MoreVertIcon />
-                                </IconButton>
-                            </Tooltip>
-                        </Box>
-                        <List>
-                            {items.map((item, index) => {
-                                const riskLevel = getRiskLevel(item);
-                                return (
-                                    <ListItem
-                                        key={index}
-                                        sx={{
-                                            bgcolor: riskLevel === 'high' ? 'error.light' : 'background.paper',
-                                            mb: 1,
-                                            borderRadius: 1,
-                                        }}
-                                        secondaryAction={
-                                            <Stack direction="row" spacing={1}>
-                                                <Tooltip title="Add Comment">
-                                                    <IconButton
-                                                        edge="end"
-                                                        onClick={() => {
-                                                            setSelectedItem(item);
-                                                            setCommentDialogOpen(true);
-                                                        }}
-                                                    >
-                                                        <CommentIcon />
-                                                    </IconButton>
-                                                </Tooltip>
+                {delayedItems.length === 0 ? (
+                    <Typography color="textSecondary">No delayed items for this project.</Typography>
+                ) : (
+                    <List>
+                        {delayedItems.map((item, index) => {
+                            const riskLevel = getRiskLevel(item);
+                            return (
+                                <ListItem
+                                    key={index}
+                                    sx={{
+                                        bgcolor: riskLevel === 'high' ? 'error.light' : 'background.paper',
+                                        mb: 1,
+                                        borderRadius: 1,
+                                    }}
+                                    secondaryAction={
+                                        <Stack direction="row" spacing={1}>
+                                            <Tooltip title="Add Comment">
                                                 <IconButton
                                                     edge="end"
-                                                    onClick={(e) => handleActionClick(e, item)}
+                                                    onClick={() => {
+                                                        setSelectedItem(item);
+                                                        setCommentDialogOpen(true);
+                                                    }}
                                                 >
-                                                    <MoreVertIcon />
+                                                    <CommentIcon />
                                                 </IconButton>
-                                            </Stack>
-                                        }
-                                    >
-                                        <ListItemText
-                                            primary={
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                    <Typography variant="subtitle1">
-                                                        {item.titleProduct}
-                                                    </Typography>
-                                                    <Chip
-                                                        label={riskLevel.toUpperCase()}
-                                                        color={getRiskColor(riskLevel)}
-                                                        size="small"
-                                                    />
-                                                </Box>
-                                            }
-                                            secondary={
-                                                <Box>
-                                                    <Typography variant="body2">
-                                                        Required On-site: {item.requiredOnsiteDate}
-                                                    </Typography>
-                                                    <Typography variant="body2">
-                                                        Vendor: {item.vendorPartner}
-                                                    </Typography>
-                                                    {item.comments && item.comments.length > 0 && (
-                                                        <Typography variant="body2" color="textSecondary">
-                                                            Latest Comment: {item.comments[item.comments.length - 1].text}
-                                                        </Typography>
-                                                    )}
-                                                </Box>
-                                            }
-                                        />
-                                    </ListItem>
-                                );
-                            })}
-                        </List>
-                    </Box>
-                ))}
-            </Paper>
-
-            {/* Project Filter Drawer */}
-            <Drawer
-                anchor="right"
-                open={drawerOpen}
-                onClose={() => setDrawerOpen(false)}
-            >
-                <Box sx={{ width: 300, p: 2 }}>
-                    <Typography variant="h6" gutterBottom>
-                        Project Filter
-                    </Typography>
-                    <List>
-                        {projects.map((project) => {
-                            const status = getProjectStatus(project);
-                            const isSelected = selectedProjects.includes(project.name);
-                            return (
-                                <ListItem key={project.name} disablePadding>
-                                    <ListItemButton>
-                                        <ListItemIcon>
-                                            <Checkbox
-                                                edge="start"
-                                                checked={isSelected}
-                                                onChange={() => handleProjectToggle(project.name)}
-                                            />
-                                        </ListItemIcon>
-                                        <ListItemText primary={project.name} />
-                                        <Stack direction="row" spacing={1} alignItems="center">
-                                            <Chip
-                                                icon={<CircleIcon />}
-                                                label={status}
-                                                color={getProjectStatusColor(status)}
-                                                size="small"
-                                            />
+                                            </Tooltip>
+                                            <IconButton
+                                                edge="end"
+                                                onClick={(e) => handleActionClick(e, item)}
+                                            >
+                                                <MoreVertIcon />
+                                            </IconButton>
                                         </Stack>
-                                    </ListItemButton>
+                                    }
+                                >
+                                    <ListItemText
+                                        primary={
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Typography variant="subtitle1">
+                                                    {item.titleProduct}
+                                                </Typography>
+                                                <Chip
+                                                    label={riskLevel.toUpperCase()}
+                                                    color={getRiskColor(riskLevel)}
+                                                    size="small"
+                                                />
+                                                {item.specifications && (
+                                                    <Typography variant="body2" sx={{ ml: 2 }} color="text.secondary">
+                                                        Spec ID: {item.specifications}
+                                                    </Typography>
+                                                )}
+                                            </Box>
+                                        }
+                                        secondary={
+                                            <Box>
+                                                <Typography variant="body2">
+                                                    Required On-site: {item.requiredOnsiteDate}
+                                                </Typography>
+                                                <Typography variant="body2">
+                                                    Vendor: {item.vendorPartner}
+                                                </Typography>
+                                                {item.comments && item.comments.length > 0 && (
+                                                    <Typography variant="body2" color="textSecondary">
+                                                        Latest Comment: {item.comments[item.comments.length - 1].text}
+                                                    </Typography>
+                                                )}
+                                            </Box>
+                                        }
+                                    />
                                 </ListItem>
                             );
                         })}
                     </List>
-                </Box>
-            </Drawer>
-
-            {/* Add Project Dialog */}
-            <Dialog
-                open={addProjectDialogOpen}
-                onClose={() => setAddProjectDialogOpen(false)}
-                maxWidth="sm"
-                fullWidth
-            >
-                <DialogTitle>Add Project to Dashboard</DialogTitle>
-                <DialogContent>
-                    <List>
-                        {projects
-                            .filter(project => !selectedProjects.includes(project.name))
-                            .map((project) => {
-                                console.log('Available project for dialog:', project);
-                                const status = getProjectStatus(project);
-                                return (
-                                    <ListItem
-                                        key={project.name}
-                                        secondaryAction={
-                                            <Tooltip title="Add Project">
-                                                <IconButton
-                                                    edge="end"
-                                                    onClick={() => handleAddProject(project.name)}
-                                                >
-                                                    <AddIcon />
-                                                </IconButton>
-                                            </Tooltip>
-                                        }
-                                    >
-                                        <ListItemText
-                                            primary={project.name}
-                                            secondary={
-                                                <Stack direction="row" spacing={1} alignItems="center">
-                                                    <Chip
-                                                        icon={<CircleIcon />}
-                                                        label={status}
-                                                        color={getProjectStatusColor(status)}
-                                                        size="small"
-                                                    />
-                                                    {project.progress !== undefined && (
-                                                        <Typography variant="body2" color="textSecondary">
-                                                            Progress: {project.progress}%
-                                                        </Typography>
-                                                    )}
-                                                </Stack>
-                                            }
-                                        />
-                                    </ListItem>
-                                );
-                            })}
-                    </List>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setAddProjectDialogOpen(false)}>Close</Button>
-                </DialogActions>
-            </Dialog>
+                )}
+            </Paper>
 
             {/* Comment Dialog */}
             <Dialog

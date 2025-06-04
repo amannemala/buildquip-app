@@ -73,11 +73,8 @@ function Submittals() {
         const savedItems = JSON.parse(localStorage.getItem('submittalsItems') || '[]');
         const filteredItems = selectedProject ? savedItems.filter(item => item.projectName === selectedProject) : [];
         setTableRows(filteredItems);
-
-        // Load form rows from localStorage if they exist for selected project
-        const savedFormRows = JSON.parse(localStorage.getItem('submittalsFormRows') || '[]');
-        const filteredFormRows = selectedProject ? savedFormRows.filter(row => row.projectName === selectedProject) : [];
-        setFormRows(filteredFormRows.length > 0 ? filteredFormRows : [{
+        // Always show just one empty row for new entry
+        setFormRows([{
             projectName: selectedProject,
             specifications: '',
             titleProduct: '',
@@ -189,6 +186,7 @@ function Submittals() {
         const allItems = JSON.parse(localStorage.getItem('submittalsItems') || '[]');
         const otherItems = allItems.filter(item => item.projectName !== selectedProject);
         localStorage.setItem('submittalsItems', JSON.stringify([...otherItems, ...newTableRows]));
+        // Reset to a single empty row
         setFormRows([{
             projectName: selectedProject,
             specifications: '',

@@ -61,11 +61,8 @@ function Procurement() {
         const savedItems = JSON.parse(localStorage.getItem('procurementItems') || '[]');
         const filteredItems = selectedProject ? savedItems.filter(item => item.projectName === selectedProject) : [];
         setTableRows(filteredItems);
-
-        // Load form rows from localStorage if they exist for selected project
-        const savedFormRows = JSON.parse(localStorage.getItem('procurementFormRows') || '[]');
-        const filteredFormRows = selectedProject ? savedFormRows.filter(row => row.projectName === selectedProject) : [];
-        setFormRows(filteredFormRows.length > 0 ? filteredFormRows : [{
+        // Always show just one empty row for new entry
+        setFormRows([{
             projectName: selectedProject,
             specifications: '',
             titleProduct: '',
@@ -172,25 +169,21 @@ function Procurement() {
             row.leadTime &&
             row.orderDate
         );
-
         if (validRows.length === 0) return;
-
         let newTableRows;
         if (editingIndex !== null) {
-            // Update existing row
             newTableRows = [...tableRows];
             newTableRows[editingIndex] = validRows[0];
             setEditingIndex(null);
         } else {
-            // Add new rows
             newTableRows = [...tableRows, ...validRows];
         }
-
         setTableRows(newTableRows);
         // Save all procurement items for all projects
         const allItems = JSON.parse(localStorage.getItem('procurementItems') || '[]');
         const otherItems = allItems.filter(item => item.projectName !== selectedProject);
         localStorage.setItem('procurementItems', JSON.stringify([...otherItems, ...newTableRows]));
+        // Reset to a single empty row
         setFormRows([{
             projectName: selectedProject,
             specifications: '',

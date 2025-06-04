@@ -361,8 +361,44 @@ function Projects() {
             comments: '',
         }))));
 
-        // Navigate to procurement page
-        window.location.href = '#/procurement';
+        // If a material list file is present, process it before navigating
+        if (formData.materialListFile) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                console.log('Parsed rows from file:', rows);
+                if (rows.length > 0) {
+                    const headers = rows[0].map(h => h.toLowerCase());
+                    console.log('Headers:', headers);
+                    console.log('specIdx:', headers.indexOf('specifications'));
+                    console.log('titleIdx:', headers.indexOf('title/product'));
+                    console.log('matIdIdx:', headers.indexOf('material id'));
+                    console.log('vendorIdx:', headers.indexOf('vendor/partner'));
+                }
+                processMaterialList(rows);
+                setShowSuccess(true);
+                setTimeout(() => {
+                    setIsSubmitting(false);
+                    navigate('/procurement');
+                }, 1500);
+            };
+            reader.readAsArrayBuffer(formData.materialListFile);
+            return; // Prevent navigating before file is processed
+        }
+
+        setFormData({
+            projectName: '',
+            projectBudget: '',
+            projectEndDate: '',
+            projectStatus: 'Not Started',
+            projectProgress: 0,
+            materialListFile: null,
+            materialListSheet: '',
+        });
+        setErrors({});
     };
 
     const handleFileUpload = (event) => {

@@ -266,14 +266,26 @@ function Dashboard() {
                     <List>
                         {delayedItems.map((item, index) => {
                             const riskLevel = getRiskLevel(item);
+                            let sxProps = {};
+                            if (riskLevel === 'high') {
+                                sxProps = {
+                                    bgcolor: 'error.light',
+                                    mb: 1,
+                                    borderRadius: 1,
+                                };
+                            } else if (riskLevel === 'medium' || riskLevel === 'low') {
+                                sxProps = {
+                                    border: '2px solid',
+                                    borderColor: 'error.main',
+                                    mb: 1,
+                                    borderRadius: 1,
+                                    bgcolor: 'background.paper',
+                                };
+                            }
                             return (
                                 <ListItem
                                     key={index}
-                                    sx={{
-                                        bgcolor: riskLevel === 'high' ? 'error.light' : 'background.paper',
-                                        mb: 1,
-                                        borderRadius: 1,
-                                    }}
+                                    sx={sxProps}
                                     secondaryAction={
                                         <Stack direction="row" spacing={1}>
                                             <Tooltip title="Add Comment">

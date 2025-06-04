@@ -388,14 +388,6 @@ function Submittals() {
                     Add Row
                 </Button>
                 <Button
-                    variant="outlined"
-                    color="secondary"
-                    onClick={addEmptyRow}
-                    sx={{ mr: 1 }}
-                >
-                    Add Empty Row
-                </Button>
-                <Button
                     variant="contained"
                     color="primary"
                     onClick={submitAllItems}
